@@ -1,8 +1,7 @@
-package core
+package baidubce
 
 import (
 	"baidubce/util"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -53,24 +52,7 @@ func TestGetCanonicalHeader(t *testing.T) {
 		"x-bce-date:2015-04-27T08%3A23%3A49Z",
 	}, "\n")
 
-	fmt.Println([]string{
-		"content-length:8",
-		"content-md5:0a52730597fb4ffa01fc117d9e71e3a9",
-		"content-type:text%2Fplain",
-		"host:bj.bcebos.com",
-		"x-bce-date:2015-04-27T08%3A23%3A49Z",
-	})
-
-	header := http.Header{}
-
-	header.Add("host", "bj.bcebos.com")
-	header.Add("Date", "Mon, 27 Apr 2015 16:23:49 +0800")
-	header.Add("Content-Type", "text/plain")
-	header.Add("Content-Length", "8")
-	header.Add("Content-Md5", "0a52730597fb4ffa01fc117d9e71e3a9")
-	header.Add("x-bce-date", "2015-04-27T08:23:49Z")
-
-	canonicalHeader := getCanonicalHeader(header)
+	canonicalHeader := getCanonicalHeader(getHttpHeader())
 
 	if canonicalHeader != expected {
 		t.Error(util.ToTestError("getCanonicalHeaders", canonicalHeader, expected))

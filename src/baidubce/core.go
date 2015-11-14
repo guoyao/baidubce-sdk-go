@@ -10,12 +10,12 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * @file structure.go
+ * @file core.go
  * @author guoyao
  */
 
 // Package core define a set of core data structure, and implements a set of core functions
-package core
+package baidubce
 
 import (
 	"baidubce/util"

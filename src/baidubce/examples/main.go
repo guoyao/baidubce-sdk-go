@@ -1,24 +1,22 @@
 package main
 
 import (
-	//"baidubce/util"
+	bce "baidubce"
 	"fmt"
-	//"net/url"
-	"baidubce/core"
 	"net/http"
 )
 
-var credentials core.Credentials = core.Credentials{
+var credentials bce.Credentials = bce.Credentials{
 	AccessKeyId:     "0b0f67dfb88244b289b72b142befad0c",
 	SecretAccessKey: "bad522c2126a4618a8125f4b6cf6356f",
 }
 
-var signOption core.SignOption = core.SignOption{
+var signOption bce.SignOption = bce.SignOption{
 	Timestamp:                 "2015-04-27T08:23:49Z",
 	ExpirationPeriodInSeconds: 1800,
 }
 
-var request core.Request = core.Request{
+var request bce.Request = bce.Request{
 	HttpMethod:  "PUT",
 	URI:         "/v1/test/myfolder/readme.txt",
 	QueryString: "partNumber=9&uploadId=VXBsb2FkIElpZS5tMnRzIHVwbG9hZA",
@@ -38,7 +36,11 @@ func getHttpHeader() http.Header {
 	return header
 }
 
-func main() {
-	signature := core.Sign(credentials, request, signOption)
+func generateSignature() {
+	signature := bce.Sign(credentials, request, signOption)
 	fmt.Println(signature)
+}
+
+func main() {
+	generateSignature()
 }
