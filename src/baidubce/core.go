@@ -25,7 +25,16 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
+
+const (
+	EXPIRATION_PERIOD_IN_SECONDS = 1800
+)
+
+var Region map[string]string = map[string]string{
+	"bj": "http://bj.bcebos.com",
+}
 
 type Credentials struct {
 	AccessKeyId     string
@@ -34,14 +43,14 @@ type Credentials struct {
 
 type SignOption struct {
 	Timestamp                 string
-	ExpirationPeriodInSeconds uint
+	ExpirationPeriodInSeconds int
 }
 
 type Request struct {
-	HttpMethod  string
-	URI         string
-	QueryString string
-	Header      http.Header
+	HttpMethod string
+	URI        string
+	Params     map[string]string
+	Header     http.Header
 }
 
 var canonicalHeaders []string = []string{
@@ -51,24 +60,43 @@ var canonicalHeaders []string = []string{
 	"content-md5",
 }
 
-func NewCredentials(accessKeyId, secretAccessKey string) Credentials {
-	return Credentials{accessKeyId, secretAccessKey}
+func NewCredentials(accessKeyId, secretAccessKey string) *Credentials {
+	return &Credentials{accessKeyId, secretAccessKey}
 }
 
-func NewSignOption(timestamp string, expirationPeriodInSeconds uint) SignOption {
-	return SignOption{timestamp, expirationPeriodInSeconds}
+func NewSignOption(timestamp string, expirationPeriodInSeconds int) *SignOption {
+	option := &SignOption{timestamp, expirationPeriodInSeconds}
+	option.init()
+
+	return option
 }
 
-func NewRequest(httpMethod, URI, queryString string, header http.Header) Request {
-	return Request{httpMethod, URI, queryString, header}
+func NewRequest(httpMethod, URI string, params map[string]string, header http.Header) *Request {
+	return &Request{httpMethod, URI, params, header}
 }
 
-func Sign(credentials Credentials, req Request, option SignOption) string {
-	signingKey := getSigningKey(credentials, option)
-	canonicalRequest := req.canonical()
-	signature := util.HmacSha256Hex(signingKey, canonicalRequest)
+func GenerateAuthorization(credentials Credentials, req Request, option *SignOption) string {
+	if option == nil {
+		option = &SignOption{}
+	}
+	option.init()
 
-	return signature
+	authorization := "bce-auth-v1/" + credentials.AccessKeyId
+	authorization += "/" + option.Timestamp
+	authorization += "/" + strconv.Itoa(option.ExpirationPeriodInSeconds)
+	signature := sign(credentials, req, option)
+	authorization += "//" + signature
+
+	return authorization
+}
+
+func (option *SignOption) init() {
+	if option.Timestamp == "" {
+		option.Timestamp = util.TimeToUTCString(time.Now())
+	}
+	if option.ExpirationPeriodInSeconds <= 0 && option.ExpirationPeriodInSeconds != -1 {
+		option.ExpirationPeriodInSeconds = EXPIRATION_PERIOD_IN_SECONDS
+	}
 }
 
 func (req *Request) canonical() string {
@@ -80,7 +108,7 @@ func (req *Request) canonical() string {
 	canonicalURI := util.UriEncodeExceptSlash(util.GetUriPath(req.URI))
 	canonicalStrings = append(canonicalStrings, canonicalURI)
 
-	canonicalQueryString := getCanonicalQueryString(req.QueryString)
+	canonicalQueryString := getCanonicalQueryString(req.Params)
 	canonicalStrings = append(canonicalStrings, canonicalQueryString)
 
 	canonicalHeader := getCanonicalHeader(req.Header)
@@ -89,30 +117,41 @@ func (req *Request) canonical() string {
 	return strings.Join(canonicalStrings, "\n")
 }
 
-func getSigningKey(credentials Credentials, option SignOption) string {
+func (req *Request) ParamsToCanonicalQueryString() string {
+	return getCanonicalQueryString(req.Params)
+}
+
+// generate signature
+func sign(credentials Credentials, req Request, option *SignOption) string {
+	signingKey := getSigningKey(credentials, option)
+	req.Header.Add("x-bce-date", option.Timestamp)
+	canonicalRequest := req.canonical()
+	signature := util.HmacSha256Hex(signingKey, canonicalRequest)
+
+	return signature
+}
+
+func getSigningKey(credentials Credentials, option *SignOption) string {
 	var authStringPrefix = fmt.Sprintf("bce-auth-v1/%s", credentials.AccessKeyId)
-
-	if option.Timestamp != "" {
-		authStringPrefix += "/" + option.Timestamp
-	}
-
-	if option.ExpirationPeriodInSeconds > 0 {
-		authStringPrefix += "/" + strconv.Itoa(int(option.ExpirationPeriodInSeconds))
-	}
+	authStringPrefix += "/" + option.Timestamp
+	authStringPrefix += "/" + strconv.Itoa(option.ExpirationPeriodInSeconds)
 
 	return util.HmacSha256Hex(credentials.SecretAccessKey, authStringPrefix)
 }
 
-func getCanonicalQueryString(queryString string) string {
-	arr := strings.Split(queryString, "&")
-	encodedQueryStrings := make([]string, 0, 10)
+func getCanonicalQueryString(params map[string]string) string {
+	if params == nil {
+		return ""
+	}
 
-	for _, value := range arr {
-		if value != "" {
-			keyValueArr := strings.Split(value, "=")
-			query := url.QueryEscape(keyValueArr[0]) + "="
-			if len(keyValueArr) > 1 {
-				query += url.QueryEscape(keyValueArr[1])
+	encodedQueryStrings := make([]string, 0, 10)
+	var query string
+
+	for key, value := range params {
+		if key != "" {
+			query = url.QueryEscape(key) + "="
+			if value != "" {
+				query += url.QueryEscape(value)
 			}
 			encodedQueryStrings = append(encodedQueryStrings, query)
 		}
@@ -127,8 +166,9 @@ func getCanonicalHeader(header http.Header) string {
 	headers := make([]string, 0, len(header))
 	for key, value := range header {
 		if isCanonicalHeader(key) {
-			headerValue := url.QueryEscape(strings.TrimSpace(value[0]))
-			headers = append(headers, fmt.Sprintf("%s:%s", strings.ToLower(key), headerValue))
+			headers = append(headers, fmt.Sprintf("%s:%s",
+				url.QueryEscape(strings.ToLower(key)),
+				url.QueryEscape(strings.TrimSpace(value[0]))))
 		}
 	}
 

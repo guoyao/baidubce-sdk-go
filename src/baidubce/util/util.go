@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func GetUriPath(uri string) string {
@@ -61,6 +62,11 @@ func Contains(slice []string, value string) bool {
 	}
 
 	return false
+}
+
+func TimeToUTCString(t time.Time) string {
+	format := time.RFC3339 // 2006-01-02T15:04:05Z07:00
+	return t.UTC().Format(format)
 }
 
 func ToTestError(funcName, got, expected string) string {

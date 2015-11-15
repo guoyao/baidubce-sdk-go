@@ -12,16 +12,16 @@ var credentials Credentials = Credentials{
 	SecretAccessKey: "bad522c2126a4618a8125f4b6cf6356f",
 }
 
-var signOption SignOption = SignOption{
-	Timestamp:                 "2015-04-27T08:23:49Z",
-	ExpirationPeriodInSeconds: 1800,
-}
+var signOption *SignOption = NewSignOption("2015-04-27T08:23:49Z", EXPIRATION_PERIOD_IN_SECONDS)
 
 var request Request = Request{
-	HttpMethod:  "PUT",
-	URI:         "/v1/test/myfolder/readme.txt",
-	QueryString: "partNumber=9&uploadId=VXBsb2FkIElpZS5tMnRzIHVwbG9hZA",
-	Header:      getHttpHeader(),
+	HttpMethod: "PUT",
+	URI:        "/v1/test/myfolder/readme.txt",
+	Params: map[string]string{
+		"partNumber": "9",
+		"uploadId":   "VXBsb2FkIElpZS5tMnRzIHVwbG9hZA",
+	},
+	Header: getHttpHeader(),
 }
 
 func TestGetSigningKey(t *testing.T) {
@@ -35,8 +35,12 @@ func TestGetSigningKey(t *testing.T) {
 
 func TestGetCanonicalQueryString(t *testing.T) {
 	const expected = "text10=test&text1=%E6%B5%8B%E8%AF%95&text="
-	const queryString = "text&text1=测试&text10=test"
-	encodedQueryString := getCanonicalQueryString(queryString)
+	params := map[string]string{
+		"text":   "",
+		"text1":  "测试",
+		"text10": "test",
+	}
+	encodedQueryString := getCanonicalQueryString(params)
 
 	if encodedQueryString != expected {
 		t.Error(util.ToTestError("getCanonicalQueryString", encodedQueryString, expected))
@@ -61,10 +65,10 @@ func TestGetCanonicalHeader(t *testing.T) {
 
 func TestSign(t *testing.T) {
 	expected := "a19e6386e990691aca1114a20357c83713f1cb4be3d74942bb4ed37469ecdacf"
-	signature := Sign(credentials, request, signOption)
+	signature := sign(credentials, request, signOption)
 
 	if signature != expected {
-		t.Error(util.ToTestError("Sign", signature, expected))
+		t.Error(util.ToTestError("sign", signature, expected))
 	}
 }
 

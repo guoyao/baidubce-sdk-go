@@ -4,22 +4,23 @@ import (
 	bce "baidubce"
 	"fmt"
 	"net/http"
+	"os"
 )
 
 var credentials bce.Credentials = bce.Credentials{
-	AccessKeyId:     "0b0f67dfb88244b289b72b142befad0c",
-	SecretAccessKey: "bad522c2126a4618a8125f4b6cf6356f",
+	AccessKeyId:     os.Getenv("BAIDU_BCE_AK"),
+	SecretAccessKey: os.Getenv("BAIDU_BCE_SK"),
 }
 
 var signOption bce.SignOption = bce.SignOption{
-	Timestamp:                 "2015-04-27T08:23:49Z",
+	Timestamp:                 "2015-11-16T08:13:49Z",
 	ExpirationPeriodInSeconds: 1800,
 }
 
 var request bce.Request = bce.Request{
-	HttpMethod:  "PUT",
-	URI:         "/v1/test/myfolder/readme.txt",
-	QueryString: "partNumber=9&uploadId=VXBsb2FkIElpZS5tMnRzIHVwbG9hZA",
+	HttpMethod:  "GET",
+	URI:         "/baidubce-sdk-go",
+	QueryString: "location",
 	Header:      getHttpHeader(),
 }
 
@@ -27,17 +28,14 @@ func getHttpHeader() http.Header {
 	var header http.Header = http.Header{}
 
 	header.Add("host", "bj.bcebos.com")
-	header.Add("Date", "Mon, 27 Apr 2015 16:23:49 +0800")
-	header.Add("Content-Type", "text/plain")
-	header.Add("Content-Length", "8")
-	header.Add("Content-Md5", "0a52730597fb4ffa01fc117d9e71e3a9")
-	header.Add("x-bce-date", "2015-04-27T08:23:49Z")
+	//header.Add("Date", "Mon, 27 Apr 2015 16:23:49 +0800")
+	header.Add("x-bce-date", "2015-11-16T08:13:49Z")
 
 	return header
 }
 
 func generateSignature() {
-	signature := bce.Sign(credentials, request, signOption)
+	signature := bce.GenerateAuthorization(credentials, request, signOption)
 	fmt.Println(signature)
 }
 
