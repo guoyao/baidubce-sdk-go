@@ -5,66 +5,57 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
-type Config struct {
-	bce.Credentials
-	Endpoint string
-}
-
 type Client struct {
-	Config
+	bce.Config
 }
 
 func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (string, error) {
-	bceRequest := bce.Request{
-		HttpMethod: "GET",
-		URI:        "/" + bucketName,
-		Params:     map[string]string{"location": ""},
+	if c.Endpoint != "" {
+		bucketName = ""
 	}
 
-	return c.sendRequest(bceRequest, option)
+	req, err := bce.NewRequest(
+		"GET",
+		"/"+bucketName,
+		c.Endpoint,
+		map[string]string{"location": ""},
+		nil,
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	return c.sendRequest(req, option)
 }
 
 func (c *Client) ListBucket(option *bce.SignOption) (string, error) {
-	bceRequest := bce.Request{
-		HttpMethod: "GET",
-		URI:        "/v1/",
+	req, err := bce.NewRequest(
+		"GET",
+		"/v1/",
+		c.Endpoint,
+		nil,
+		nil,
+	)
+
+	if err != nil {
+		return "", err
 	}
 
-	return c.sendRequest(bceRequest, option)
+	return c.sendRequest(req, option)
 }
 
-func (c *Client) sendRequest(bceRequest bce.Request, option *bce.SignOption) (string, error) {
+func (c *Client) sendRequest(req *bce.Request, option *bce.SignOption) (string, error) {
 	if option == nil {
 		option = bce.NewSignOption("", bce.EXPIRATION_PERIOD_IN_SECONDS)
 	}
 
-	bceRequest.Header = getHttpHeader()
-	authorization := bce.GenerateAuthorization(c.Credentials, bceRequest, option)
-	URI := bce.Region["bj"]
-
-	if c.Endpoint != "" {
-		URI = c.Endpoint
-	}
-
-	URI += bceRequest.URI
-	queryString := bceRequest.ParamsToCanonicalQueryString()
-	if queryString != "" {
-		URI += "?" + queryString
-	}
-
-	req, err := http.NewRequest(bceRequest.HttpMethod, URI, nil)
-	if err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	req.Header = bceRequest.Header
+	authorization := bce.GenerateAuthorization(c.Credentials, *req, option)
 	req.Header.Add("Authorization", authorization)
 	httpClient := http.Client{}
-	res, err := httpClient.Do(req)
+	res, err := httpClient.Do((*http.Request)(req))
 
 	defer res.Body.Close()
 
@@ -81,13 +72,4 @@ func (c *Client) sendRequest(bceRequest bce.Request, option *bce.SignOption) (st
 	}
 
 	return string(body), nil
-}
-
-func getHttpHeader() http.Header {
-	var header http.Header = http.Header{}
-
-	header.Add("Host", "bj.bcebos.com")
-	header.Add("Date", time.Now().Format(time.RFC1123))
-
-	return header
 }

@@ -32,3 +32,18 @@ func TestTimeToUTCString(t *testing.T) {
 		t.Error(ToTestError("TimeToUTCString", utc, expected))
 	}
 }
+
+func TestHostToUrl(t *testing.T) {
+	expected := "http://bj.bcebos.com"
+	host := "bj.bcebos.com"
+	url := HostToUrl(host)
+	if url != expected {
+		t.Error(ToTestError("HostToUrl", url, expected))
+	}
+
+	host = "http://bj.bcebos.com"
+	url = HostToUrl(host)
+	if url != expected {
+		t.Error(ToTestError("HostToUrl", url, expected))
+	}
+}

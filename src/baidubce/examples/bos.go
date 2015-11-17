@@ -13,8 +13,9 @@ var credentials bce.Credentials = bce.Credentials{
 }
 
 var bosClient bos.Client = bos.Client{
-	bos.Config{
+	bce.Config{
 		Credentials: credentials,
+		Endpoint:    "baidubce-sdk-go.tocloud.org",
 	},
 }
 

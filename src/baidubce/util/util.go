@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -67,6 +68,14 @@ func Contains(slice []string, value string) bool {
 func TimeToUTCString(t time.Time) string {
 	format := time.RFC3339 // 2006-01-02T15:04:05Z07:00
 	return t.UTC().Format(format)
+}
+
+func HostToUrl(host string) string {
+	if matched, _ := regexp.MatchString("^[[:alpha:]]+:", host); matched {
+		return host
+	}
+
+	return "http://" + host
 }
 
 func ToTestError(funcName, got, expected string) string {

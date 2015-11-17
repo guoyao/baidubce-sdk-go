@@ -20,6 +20,7 @@ package baidubce
 import (
 	"baidubce/util"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -33,7 +34,8 @@ const (
 )
 
 var Region map[string]string = map[string]string{
-	"bj": "http://bj.bcebos.com",
+	"bj": "bj.bcebos.com",
+	"gz": "gz.bcebos.com",
 }
 
 type Credentials struct {
@@ -41,17 +43,17 @@ type Credentials struct {
 	SecretAccessKey string
 }
 
+type Config struct {
+	Credentials
+	Endpoint string
+}
+
 type SignOption struct {
 	Timestamp                 string
 	ExpirationPeriodInSeconds int
 }
 
-type Request struct {
-	HttpMethod string
-	URI        string
-	Params     map[string]string
-	Header     http.Header
-}
+type Request http.Request
 
 var canonicalHeaders []string = []string{
 	"host",
@@ -71,8 +73,26 @@ func NewSignOption(timestamp string, expirationPeriodInSeconds int) *SignOption 
 	return option
 }
 
-func NewRequest(httpMethod, URI string, params map[string]string, header http.Header) *Request {
-	return &Request{httpMethod, URI, params, header}
+func NewRequest(method, uriPath, endpoint string, params map[string]string, body io.Reader) (*Request, error) {
+	method = strings.ToUpper(method)
+	host := Region["bj"]
+	if endpoint != "" {
+		host = endpoint
+	}
+
+	url := fmt.Sprintf("%s%s?%s", util.HostToUrl(host), uriPath, getCanonicalQueryString(params))
+	req, err := http.NewRequest(method, url, body)
+	req.Header.Add("Host", host)
+	req.Header.Add("Date", time.Now().Format(time.RFC1123))
+	return (*Request)(req), err
+}
+
+func (req *Request) AddHeader(headerMap map[string]string) {
+	if headerMap != nil {
+		for key, value := range headerMap {
+			req.Header.Add(key, value)
+		}
+	}
 }
 
 func GenerateAuthorization(credentials Credentials, req Request, option *SignOption) string {
@@ -102,23 +122,17 @@ func (option *SignOption) init() {
 func (req *Request) canonical() string {
 	canonicalStrings := make([]string, 0, 4)
 
-	canonicalHttpMethod := strings.ToUpper(req.HttpMethod)
-	canonicalStrings = append(canonicalStrings, canonicalHttpMethod)
+	canonicalStrings = append(canonicalStrings, req.Method)
 
-	canonicalURI := util.UriEncodeExceptSlash(util.GetUriPath(req.URI))
+	canonicalURI := util.UriEncodeExceptSlash(req.URL.Path)
 	canonicalStrings = append(canonicalStrings, canonicalURI)
 
-	canonicalQueryString := getCanonicalQueryString(req.Params)
-	canonicalStrings = append(canonicalStrings, canonicalQueryString)
+	canonicalStrings = append(canonicalStrings, req.URL.RawQuery)
 
 	canonicalHeader := getCanonicalHeader(req.Header)
 	canonicalStrings = append(canonicalStrings, canonicalHeader)
 
 	return strings.Join(canonicalStrings, "\n")
-}
-
-func (req *Request) ParamsToCanonicalQueryString() string {
-	return getCanonicalQueryString(req.Params)
 }
 
 // generate signature
