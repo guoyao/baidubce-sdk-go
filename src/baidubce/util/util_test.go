@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -46,4 +47,46 @@ func TestHostToUrl(t *testing.T) {
 	if url != expected {
 		t.Error(ToTestError("HostToUrl", url, expected))
 	}
+}
+
+func TestToCanonicalQueryString(t *testing.T) {
+	const expected = "text10=test&text1=%E6%B5%8B%E8%AF%95&text="
+	params := map[string]string{
+		"text":   "",
+		"text1":  "测试",
+		"text10": "test",
+	}
+	encodedQueryString := ToCanonicalQueryString(params)
+
+	if encodedQueryString != expected {
+		t.Error(ToTestError("ToCanonicalQueryString", encodedQueryString, expected))
+	}
+}
+
+func TestToCanonicalHeaderString(t *testing.T) {
+	expected := strings.Join([]string{
+		"content-length:8",
+		"content-md5:0a52730597fb4ffa01fc117d9e71e3a9",
+		"content-type:text%2Fplain",
+		"host:bj.bcebos.com",
+		"x-bce-date:2015-04-27T08%3A23%3A49Z",
+	}, "\n")
+
+	canonicalHeader := ToCanonicalHeaderString(getHeaders())
+
+	if canonicalHeader != expected {
+		t.Error(ToTestError("ToCanonicalHeaderString", canonicalHeader, expected))
+	}
+}
+
+func getHeaders() map[string]string {
+	header := map[string]string{
+		"Host":           "bj.bcebos.com",
+		"Content-Type":   "text/plain",
+		"Content-Length": "8",
+		"Content-Md5":    "0a52730597fb4ffa01fc117d9e71e3a9",
+		"x-bce-date":     "2015-04-27T08:23:49Z",
+	}
+
+	return header
 }

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -42,7 +43,7 @@ func UriEncodeExceptSlash(uri string) string {
 		if str == "/" {
 			result += str
 		} else {
-			result += url.QueryEscape(str)
+			result += UrlEncode(str)
 		}
 	}
 
@@ -55,9 +56,31 @@ func HmacSha256Hex(key, message string) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func Contains(slice []string, value string) bool {
+// Whether the string slice contains a certain value
+// Ignore case when comparing if case insensitive
+func Contains(slice []string, value string, caseInsensitive bool) bool {
+	if caseInsensitive {
+		value = strings.ToLower(value)
+	}
+
 	for _, v := range slice {
+		if caseInsensitive {
+			v = strings.ToLower(v)
+		}
+
 		if value == v {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Whether the string map contains a uncertain value
+// The result is determined by compare function
+func MapContains(m map[string]string, compareFunc func(string, string) bool) bool {
+	for key, value := range m {
+		if compareFunc(key, value) {
 			return true
 		}
 	}
@@ -76,6 +99,49 @@ func HostToUrl(host string) string {
 	}
 
 	return "http://" + host
+}
+
+func ToCanonicalQueryString(params map[string]string) string {
+	if params == nil {
+		return ""
+	}
+
+	encodedQueryStrings := make([]string, 0, 10)
+	var query string
+
+	for key, value := range params {
+		if key != "" {
+			query = UrlEncode(key) + "="
+			if value != "" {
+				query += UrlEncode(value)
+			}
+			encodedQueryStrings = append(encodedQueryStrings, query)
+		}
+	}
+
+	sort.Strings(encodedQueryStrings)
+
+	return strings.Join(encodedQueryStrings, "&")
+}
+
+func ToCanonicalHeaderString(headerMap map[string]string) string {
+	headers := make([]string, 0, len(headerMap))
+	for key, value := range headerMap {
+		headers = append(headers,
+			fmt.Sprintf("%s:%s", UrlEncode(strings.ToLower(key)),
+				UrlEncode(strings.TrimSpace(value))))
+	}
+
+	sort.Strings(headers)
+
+	return strings.Join(headers, "\n")
+}
+
+// UrlEncoded encodes a string like Javascript's encodeURIComponent()
+func UrlEncode(str string) string {
+	// BUG(go): see https://github.com/golang/go/issues/4013
+	// use %20 instead of the + character for encoding a space
+	return strings.Replace(url.QueryEscape(str), "+", "%20", -1)
 }
 
 func ToTestError(funcName, got, expected string) string {

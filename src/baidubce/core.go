@@ -14,15 +14,15 @@
  * @author guoyao
  */
 
-// Package core define a set of core data structure, and implements a set of core functions
+// Package baidubce define a set of core data structure, and implements a set of core functions
 package baidubce
 
 import (
 	"baidubce/util"
 	"fmt"
-	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
-	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -43,6 +43,10 @@ type Credentials struct {
 	SecretAccessKey string
 }
 
+func NewCredentials(accessKeyId, secretAccessKey string) *Credentials {
+	return &Credentials{accessKeyId, secretAccessKey}
+}
+
 type Config struct {
 	Credentials
 	Endpoint string
@@ -51,48 +55,29 @@ type Config struct {
 type SignOption struct {
 	Timestamp                 string
 	ExpirationPeriodInSeconds int
+	Headers                   map[string]string
+	HeadersToSign             []string
+	headersToSignSpecified    bool
 }
 
-type Request http.Request
-
-var canonicalHeaders []string = []string{
-	"host",
-	"content-length",
-	"content-type",
-	"content-md5",
-}
-
-func NewCredentials(accessKeyId, secretAccessKey string) *Credentials {
-	return &Credentials{accessKeyId, secretAccessKey}
-}
-
-func NewSignOption(timestamp string, expirationPeriodInSeconds int) *SignOption {
-	option := &SignOption{timestamp, expirationPeriodInSeconds}
-	option.init()
-
-	return option
-}
-
-func NewRequest(method, uriPath, endpoint string, params map[string]string, body io.Reader) (*Request, error) {
-	method = strings.ToUpper(method)
-	host := Region["bj"]
-	if endpoint != "" {
-		host = endpoint
+func (option *SignOption) signedHeadersToString() string {
+	var result string
+	length := len(option.HeadersToSign)
+	if option.headersToSignSpecified && length > 0 {
+		headers := make([]string, 0, length)
+		headers = append(headers, option.HeadersToSign...)
+		sort.Strings(headers)
+		result = strings.Join(headers, ";")
 	}
 
-	url := fmt.Sprintf("%s%s?%s", util.HostToUrl(host), uriPath, getCanonicalQueryString(params))
-	req, err := http.NewRequest(method, url, body)
-	req.Header.Add("Host", host)
-	req.Header.Add("Date", time.Now().Format(time.RFC1123))
-	return (*Request)(req), err
+	return result
 }
 
-func (req *Request) AddHeader(headerMap map[string]string) {
-	if headerMap != nil {
-		for key, value := range headerMap {
-			req.Header.Add(key, value)
-		}
-	}
+func NewSignOption(timestamp string, expirationPeriodInSeconds int,
+	headers map[string]string, headersToSign []string) *SignOption {
+
+	return &SignOption{timestamp, expirationPeriodInSeconds,
+		headers, headersToSign, len(headersToSign) > 0}
 }
 
 func GenerateAuthorization(credentials Credentials, req Request, option *SignOption) string {
@@ -105,41 +90,91 @@ func GenerateAuthorization(credentials Credentials, req Request, option *SignOpt
 	authorization += "/" + option.Timestamp
 	authorization += "/" + strconv.Itoa(option.ExpirationPeriodInSeconds)
 	signature := sign(credentials, req, option)
-	authorization += "//" + signature
+	authorization += "/" + option.signedHeadersToString() + "/" + signature
+
+	req.addHeader("Authorization", authorization)
 
 	return authorization
+}
+
+type Client struct {
+	Config
+}
+
+func (c *Client) SendRequest(req *Request, option *SignOption) (string, error) {
+	GenerateAuthorization(c.Credentials, *req, option)
+	httpClient := http.Client{}
+	res, err := httpClient.Do((*http.Request)(req))
+
+	defer res.Body.Close()
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return string(body), nil
 }
 
 func (option *SignOption) init() {
 	if option.Timestamp == "" {
 		option.Timestamp = util.TimeToUTCString(time.Now())
 	}
+
 	if option.ExpirationPeriodInSeconds <= 0 && option.ExpirationPeriodInSeconds != -1 {
 		option.ExpirationPeriodInSeconds = EXPIRATION_PERIOD_IN_SECONDS
 	}
+
+	if option.Headers == nil {
+		option.Headers = make(map[string]string, 3)
+	}
+
+	option.headersToSignSpecified = len(option.HeadersToSign) > 0
+
+	if !util.Contains(option.HeadersToSign, "host", true) {
+		option.HeadersToSign = append(option.HeadersToSign, "host")
+	}
+
+	if util.Contains(option.HeadersToSign, "date", true) {
+		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("date")) {
+
+			// BUG(guoyao): maybe cause problem, should use option.Timestamp ?
+			//option.Headers["Date"] = time.Now().Format(time.RFC1123)
+			t, err := time.Parse(time.RFC3339, option.Timestamp)
+			if err != nil {
+				panic("Timestamp format error, format must be 2006-01-02T15:04:05Z")
+			}
+
+			option.Headers["Date"] = t.Format(time.RFC1123)
+		}
+	} else if util.Contains(option.HeadersToSign, "x-bce-data", true) {
+		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("x-bce-date")) {
+			option.Headers["x-bce-date"] = option.Timestamp
+		}
+	} else {
+		option.HeadersToSign = append(option.HeadersToSign, "x-bce-date")
+		option.Headers["x-bce-date"] = option.Timestamp
+	}
 }
 
-func (req *Request) canonical() string {
-	canonicalStrings := make([]string, 0, 4)
-
-	canonicalStrings = append(canonicalStrings, req.Method)
-
-	canonicalURI := util.UriEncodeExceptSlash(req.URL.Path)
-	canonicalStrings = append(canonicalStrings, canonicalURI)
-
-	canonicalStrings = append(canonicalStrings, req.URL.RawQuery)
-
-	canonicalHeader := getCanonicalHeader(req.Header)
-	canonicalStrings = append(canonicalStrings, canonicalHeader)
-
-	return strings.Join(canonicalStrings, "\n")
+func generateHeaderValidCompareFunc(headerKey string) func(string, string) bool {
+	return func(key, value string) bool {
+		return strings.ToLower(key) == headerKey && value != ""
+	}
 }
 
 // generate signature
 func sign(credentials Credentials, req Request, option *SignOption) string {
 	signingKey := getSigningKey(credentials, option)
-	req.Header.Add("x-bce-date", option.Timestamp)
-	canonicalRequest := req.canonical()
+	req.prepareHeaders(option)
+	canonicalRequest := req.canonical(option)
 	signature := util.HmacSha256Hex(signingKey, canonicalRequest)
 
 	return signature
@@ -151,47 +186,4 @@ func getSigningKey(credentials Credentials, option *SignOption) string {
 	authStringPrefix += "/" + strconv.Itoa(option.ExpirationPeriodInSeconds)
 
 	return util.HmacSha256Hex(credentials.SecretAccessKey, authStringPrefix)
-}
-
-func getCanonicalQueryString(params map[string]string) string {
-	if params == nil {
-		return ""
-	}
-
-	encodedQueryStrings := make([]string, 0, 10)
-	var query string
-
-	for key, value := range params {
-		if key != "" {
-			query = url.QueryEscape(key) + "="
-			if value != "" {
-				query += url.QueryEscape(value)
-			}
-			encodedQueryStrings = append(encodedQueryStrings, query)
-		}
-	}
-
-	sort.Strings(encodedQueryStrings)
-
-	return strings.Join(encodedQueryStrings, "&")
-}
-
-func getCanonicalHeader(header http.Header) string {
-	headers := make([]string, 0, len(header))
-	for key, value := range header {
-		if isCanonicalHeader(key) {
-			headers = append(headers, fmt.Sprintf("%s:%s",
-				url.QueryEscape(strings.ToLower(key)),
-				url.QueryEscape(strings.TrimSpace(value[0]))))
-		}
-	}
-
-	sort.Strings(headers)
-
-	return strings.Join(headers, "\n")
-}
-
-func isCanonicalHeader(key string) bool {
-	key = strings.ToLower(key)
-	return util.Contains(canonicalHeaders, key) || strings.Index(key, "x-bce-") == 0
 }
