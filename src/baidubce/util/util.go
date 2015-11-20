@@ -88,9 +88,56 @@ func MapContains(m map[string]string, compareFunc func(string, string) bool) boo
 	return false
 }
 
+func GetMapKey(m map[string]string, key string, caseInsensitive bool) string {
+	if caseInsensitive {
+		key = strings.ToLower(key)
+	}
+
+	var tempKey string
+
+	for k := range m {
+		tempKey = k
+
+		if caseInsensitive {
+			tempKey = strings.ToLower(k)
+		}
+
+		if tempKey == key {
+			return k
+		}
+	}
+
+	return ""
+}
+
+func GetMapValue(m map[string]string, key string, caseInsensitive bool) string {
+	if caseInsensitive {
+		for k, v := range m {
+			if strings.ToLower(k) == strings.ToLower(key) {
+				return v
+			}
+		}
+	}
+
+	return m[key]
+}
+
 func TimeToUTCString(t time.Time) string {
 	format := time.RFC3339 // 2006-01-02T15:04:05Z07:00
 	return t.UTC().Format(format)
+}
+
+// format string to time.RFC1123
+func TimeStringToRFC1123(str string) string {
+	t, err := time.Parse(time.RFC3339, str)
+	if err != nil {
+		t, err = time.Parse(time.RFC1123, str)
+		if err != nil {
+			panic("Time format invalid. The time format must be time.RFC3339 or time.RFC1123")
+		}
+	}
+
+	return t.Format(time.RFC1123)
 }
 
 func HostToUrl(host string) string {
@@ -142,6 +189,23 @@ func UrlEncode(str string) string {
 	// BUG(go): see https://github.com/golang/go/issues/4013
 	// use %20 instead of the + character for encoding a space
 	return strings.Replace(url.QueryEscape(str), "+", "%20", -1)
+}
+
+func SliceToLower(slice []string) {
+	for index, value := range slice {
+		slice[index] = strings.ToLower(value)
+	}
+}
+
+func MapKeyToLower(m map[string]string) {
+	temp := make(map[string]string, len(m))
+	for key, value := range m {
+		temp[strings.ToLower(key)] = value
+		delete(m, key)
+	}
+	for key, value := range temp {
+		m[key] = value
+	}
 }
 
 func ToTestError(funcName, got, expected string) string {

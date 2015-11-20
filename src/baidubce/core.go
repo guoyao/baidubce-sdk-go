@@ -134,9 +134,12 @@ func (option *SignOption) init() {
 
 	if option.Headers == nil {
 		option.Headers = make(map[string]string, 3)
+	} else {
+		util.MapKeyToLower(option.Headers)
 	}
 
 	option.headersToSignSpecified = len(option.HeadersToSign) > 0
+	util.SliceToLower(option.HeadersToSign)
 
 	if !util.Contains(option.HeadersToSign, "host", true) {
 		option.HeadersToSign = append(option.HeadersToSign, "host")
@@ -144,17 +147,11 @@ func (option *SignOption) init() {
 
 	if util.Contains(option.HeadersToSign, "date", true) {
 		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("date")) {
-
-			// BUG(guoyao): maybe cause problem, should use option.Timestamp ?
-			//option.Headers["Date"] = time.Now().Format(time.RFC1123)
-			t, err := time.Parse(time.RFC3339, option.Timestamp)
-			if err != nil {
-				panic("Timestamp format error, format must be 2006-01-02T15:04:05Z")
-			}
-
-			option.Headers["Date"] = t.Format(time.RFC1123)
+			option.Headers["date"] = time.Now().Format(time.RFC1123)
+		} else {
+			option.Headers["date"] = util.TimeStringToRFC1123(util.GetMapValue(option.Headers, "date", true))
 		}
-	} else if util.Contains(option.HeadersToSign, "x-bce-data", true) {
+	} else if util.Contains(option.HeadersToSign, "x-bce-date", true) {
 		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("x-bce-date")) {
 			option.Headers["x-bce-date"] = option.Timestamp
 		}
@@ -166,7 +163,7 @@ func (option *SignOption) init() {
 
 func generateHeaderValidCompareFunc(headerKey string) func(string, string) bool {
 	return func(key, value string) bool {
-		return strings.ToLower(key) == headerKey && value != ""
+		return strings.ToLower(key) == strings.ToLower(headerKey) && value != ""
 	}
 }
 

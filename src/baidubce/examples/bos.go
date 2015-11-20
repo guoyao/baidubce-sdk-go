@@ -21,13 +21,15 @@ var bosClient bos.Client = bos.NewClient(
 
 func GetBucketLocation() {
 	option := &bce.SignOption{
-		//Timestamp:                 "2015-11-19T15:25:05Z",
-		ExpirationPeriodInSeconds: 1000,
+		Timestamp:                 "2015-11-20T10:00:05Z",
+		ExpirationPeriodInSeconds: 1200,
 		Headers: map[string]string{
 			"host":                "bj.bcebos.com",
 			"other":               "other",
 			"x-bce-meta-data":     "meta data",
 			"x-bce-meta-data-tag": "meta data tag",
+			//"x-bce-date":          "2015-11-20T07:49:05Z",
+			"date": "2015-11-20T10:00:05Z",
 		},
 		HeadersToSign: []string{"host", "date", "other", "x-bce-meta-data", "x-bce-meta-data-tag"},
 	}
