@@ -13,10 +13,6 @@ type BucketSummary struct {
 	Buckets []Bucket
 }
 
-func (bucketSummary *BucketSummary) GetBuckets() []Bucket {
-	return bucketSummary.Buckets
-}
-
 type Bucket struct {
 	Name, Location string
 	CreationDate   time.Time

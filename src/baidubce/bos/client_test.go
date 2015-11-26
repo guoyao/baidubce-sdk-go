@@ -14,3 +14,12 @@ func TestGetBucketLocation(t *testing.T) {
 		t.Error(test.Format("GetBucketLocation", location.LocationConstraint, expected))
 	}
 }
+
+func TestListBuckets(t *testing.T) {
+	expected := "baidubce-sdk-go"
+	bucketSummary, _ := bosClient.ListBuckets(nil)
+	bucket := bucketSummary.Buckets[0]
+	if bucket.Name != expected {
+		t.Error(test.Format("ListBuckets", bucket.Name, expected))
+	}
+}

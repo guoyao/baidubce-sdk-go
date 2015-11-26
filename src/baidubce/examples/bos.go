@@ -39,7 +39,7 @@ func ListBuckets() {
 		log.Println(err)
 	}
 
-	log.Println(bucketSummary.GetBuckets())
+	log.Println(bucketSummary.Buckets)
 }
 
 func main() {
