@@ -4,24 +4,13 @@ import (
 	bce "baidubce"
 	"baidubce/bos"
 	"log"
-	"os"
 )
 
-var credentials bce.Credentials = bce.Credentials{
-	AccessKeyId:     os.Getenv("BAIDU_BCE_AK"),
-	SecretAccessKey: os.Getenv("BAIDU_BCE_SK"),
-}
-
-var bosClient bos.Client = bos.NewClient(
-	bce.Config{
-		Credentials: credentials,
-		Endpoint:    "baidubce-sdk-go.tocloud.org",
-	},
-)
+var bosClient bos.Client = bos.DefaultClient
 
 func GetBucketLocation() {
 	option := &bce.SignOption{
-		Timestamp:                 "2015-11-20T10:00:05Z",
+		//Timestamp:                 "2015-11-20T10:00:05Z",
 		ExpirationPeriodInSeconds: 1200,
 		Headers: map[string]string{
 			"host":                "bj.bcebos.com",
@@ -29,31 +18,31 @@ func GetBucketLocation() {
 			"x-bce-meta-data":     "meta data",
 			"x-bce-meta-data-tag": "meta data tag",
 			//"x-bce-date":          "2015-11-20T07:49:05Z",
-			"date": "2015-11-20T10:00:05Z",
+			//"date": "2015-11-20T10:00:05Z",
 		},
 		HeadersToSign: []string{"host", "date", "other", "x-bce-meta-data", "x-bce-meta-data-tag"},
 	}
 
-	body, err := bosClient.GetBucketLocation("baidubce-sdk-go", option)
+	location, err := bosClient.GetBucketLocation("baidubce-sdk-go", option)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	log.Println(body)
+	log.Println(location.LocationConstraint)
 }
 
-func ListBucket() {
-	body, err := bosClient.ListBucket(nil)
+func ListBuckets() {
+	bucketSummary, err := bosClient.ListBuckets(nil)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	log.Println(body)
+	log.Println(bucketSummary.GetBuckets())
 }
 
 func main() {
 	GetBucketLocation()
-	ListBucket()
+	ListBuckets()
 }

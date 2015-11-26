@@ -207,7 +207,3 @@ func MapKeyToLower(m map[string]string) {
 		m[key] = value
 	}
 }
-
-func ToTestError(funcName, got, expected string) string {
-	return fmt.Sprintf("%s failed. Got %s, expected %s", funcName, got, expected)
-}

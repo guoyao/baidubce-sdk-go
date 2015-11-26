@@ -1,6 +1,7 @@
 package util
 
 import (
+	"baidubce/test"
 	"strings"
 	"testing"
 	"time"
@@ -12,7 +13,7 @@ func TestGetUriPath(t *testing.T) {
 	expected := "/v1/example/测试"
 	path := GetUriPath(URI)
 	if path != expected {
-		t.Error(ToTestError("GetUriPath", path, expected))
+		t.Error(test.Format("GetUriPath", path, expected))
 	}
 }
 
@@ -21,7 +22,7 @@ func TestUriEncodeExceptSlash(t *testing.T) {
 	path := GetUriPath(URI)
 	path = UriEncodeExceptSlash(path)
 	if path != expected {
-		t.Error(ToTestError("UriEncodeExceptSlash", path, expected))
+		t.Error(test.Format("UriEncodeExceptSlash", path, expected))
 	}
 }
 
@@ -30,7 +31,7 @@ func TestTimeToUTCString(t *testing.T) {
 	datetime, _ := time.Parse(time.RFC1123, "Mon, 16 Nov 2015 15:33:15 CST")
 	utc := TimeToUTCString(datetime)
 	if utc != expected {
-		t.Error(ToTestError("TimeToUTCString", utc, expected))
+		t.Error(test.Format("TimeToUTCString", utc, expected))
 	}
 }
 
@@ -39,13 +40,13 @@ func TestHostToUrl(t *testing.T) {
 	host := "bj.bcebos.com"
 	url := HostToUrl(host)
 	if url != expected {
-		t.Error(ToTestError("HostToUrl", url, expected))
+		t.Error(test.Format("HostToUrl", url, expected))
 	}
 
 	host = "http://bj.bcebos.com"
 	url = HostToUrl(host)
 	if url != expected {
-		t.Error(ToTestError("HostToUrl", url, expected))
+		t.Error(test.Format("HostToUrl", url, expected))
 	}
 }
 
@@ -59,7 +60,7 @@ func TestToCanonicalQueryString(t *testing.T) {
 	encodedQueryString := ToCanonicalQueryString(params)
 
 	if encodedQueryString != expected {
-		t.Error(ToTestError("ToCanonicalQueryString", encodedQueryString, expected))
+		t.Error(test.Format("ToCanonicalQueryString", encodedQueryString, expected))
 	}
 }
 
@@ -75,7 +76,7 @@ func TestToCanonicalHeaderString(t *testing.T) {
 	canonicalHeader := ToCanonicalHeaderString(getHeaders())
 
 	if canonicalHeader != expected {
-		t.Error(ToTestError("ToCanonicalHeaderString", canonicalHeader, expected))
+		t.Error(test.Format("ToCanonicalHeaderString", canonicalHeader, expected))
 	}
 }
 

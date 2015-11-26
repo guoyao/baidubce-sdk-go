@@ -10,7 +10,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * @file core.go
+ * @file request.go
  * @author guoyao
  */
 
@@ -119,6 +119,10 @@ func (req *Request) canonical(option *SignOption) string {
 	canonicalStrings = append(canonicalStrings, canonicalHeader)
 
 	return strings.Join(canonicalStrings, "\n")
+}
+
+func (req *Request) raw() *http.Request {
+	return (*http.Request)(req)
 }
 
 func isCanonicalHeader(key string) bool {

@@ -3,13 +3,9 @@ package main
 import (
 	bce "baidubce"
 	"fmt"
-	"os"
 )
 
-var credentials bce.Credentials = bce.Credentials{
-	AccessKeyId:     os.Getenv("BAIDU_BCE_AK"),
-	SecretAccessKey: os.Getenv("BAIDU_BCE_SK"),
-}
+var credentials = bce.DefaultCredentials
 
 var signOption *bce.SignOption = &bce.SignOption{
 	Timestamp:                 "2015-11-16T08:13:49Z",

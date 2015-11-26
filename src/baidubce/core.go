@@ -21,8 +21,8 @@ import (
 	"baidubce/util"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -47,10 +47,17 @@ func NewCredentials(accessKeyId, secretAccessKey string) *Credentials {
 	return &Credentials{accessKeyId, secretAccessKey}
 }
 
+var DefaultCredentials Credentials = Credentials{
+	os.Getenv("BAIDU_BCE_AK"),
+	os.Getenv("BAIDU_BCE_SK"),
+}
+
 type Config struct {
 	Credentials
 	Endpoint string
 }
+
+var DefaultConfig Config = Config{DefaultCredentials, ""}
 
 type SignOption struct {
 	Timestamp                 string
@@ -101,26 +108,38 @@ type Client struct {
 	Config
 }
 
-func (c *Client) SendRequest(req *Request, option *SignOption) (string, error) {
+func (c *Client) GetBucketName(bucketName string) string {
+	if c.Endpoint != "" && !util.MapContains(Region, func(key, value string) bool {
+		return strings.ToLower(value) == strings.ToLower(c.Endpoint)
+	}) {
+		bucketName = ""
+	}
+
+	return bucketName
+}
+
+func (c *Client) SendRequest(req *Request, option *SignOption) ([]byte, error) {
 	GenerateAuthorization(c.Credentials, *req, option)
 	httpClient := http.Client{}
-	res, err := httpClient.Do((*http.Request)(req))
+	res, err := httpClient.Do(req.raw())
 
-	defer res.Body.Close()
+	defer func() {
+		if res != nil {
+			res.Body.Close()
+		}
+	}()
 
 	if err != nil {
-		log.Println(err)
-		return "", err
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
-		log.Println(err)
-		return "", err
+		return nil, err
 	}
 
-	return string(body), nil
+	return body, nil
 }
 
 func (option *SignOption) init() {
@@ -128,7 +147,7 @@ func (option *SignOption) init() {
 		option.Timestamp = util.TimeToUTCString(time.Now())
 	}
 
-	if option.ExpirationPeriodInSeconds <= 0 && option.ExpirationPeriodInSeconds != -1 {
+	if option.ExpirationPeriodInSeconds <= 0 {
 		option.ExpirationPeriodInSeconds = EXPIRATION_PERIOD_IN_SECONDS
 	}
 
