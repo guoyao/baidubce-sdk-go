@@ -2,7 +2,9 @@ package bos
 
 import (
 	"baidubce/test"
+	"strconv"
 	"testing"
+	"time"
 )
 
 var bosClient Client = DefaultClient
@@ -21,5 +23,14 @@ func TestListBuckets(t *testing.T) {
 	bucket := bucketSummary.Buckets[0]
 	if bucket.Name != expected {
 		t.Error(test.Format("ListBuckets", bucket.Name, expected))
+	}
+}
+
+func TestCreateBucket(t *testing.T) {
+	bucketName := "baidubce-sdk-go-create-bucket-test-" + strconv.Itoa(int(time.Now().Unix()))
+	err := bosClient.CreateBucket(bucketName, nil)
+
+	if err != nil {
+		t.Error(test.Format("CreateBucket", err.Error(), "nil"))
 	}
 }

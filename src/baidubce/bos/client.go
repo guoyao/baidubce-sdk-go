@@ -3,6 +3,7 @@ package bos
 import (
 	bce "baidubce"
 	"encoding/json"
+	"fmt"
 )
 
 type Client struct {
@@ -48,13 +49,7 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 }
 
 func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, error) {
-	req, err := bce.NewRequest(
-		"GET",
-		"/v1/",
-		c.Endpoint,
-		nil,
-		nil,
-	)
+	req, err := bce.NewRequest("GET", fmt.Sprintf("/%s/", c.ApiVersion), c.Endpoint, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -74,4 +69,24 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, error) {
 	}
 
 	return bucketSummary, nil
+}
+
+func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) error {
+	option = &bce.SignOption{
+		HeadersToSign: []string{"date"},
+	}
+
+	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.ApiVersion, bucketName), c.Endpoint, nil, nil)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = c.SendRequest(req, option)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

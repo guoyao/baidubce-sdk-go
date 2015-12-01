@@ -54,10 +54,11 @@ var DefaultCredentials Credentials = Credentials{
 
 type Config struct {
 	Credentials
-	Endpoint string
+	Endpoint   string
+	ApiVersion string
 }
 
-var DefaultConfig Config = Config{DefaultCredentials, ""}
+var DefaultConfig Config = Config{DefaultCredentials, "", "v1"}
 
 type SignOption struct {
 	Timestamp                 string
@@ -137,6 +138,10 @@ func (c *Client) SendRequest(req *Request, option *SignOption) ([]byte, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if res.StatusCode >= 400 {
+		return body, NewErrorFromJson(body)
 	}
 
 	return body, nil

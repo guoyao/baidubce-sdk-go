@@ -8,7 +8,7 @@ import (
 
 var bosClient bos.Client = bos.DefaultClient
 
-func GetBucketLocation() {
+func getBucketLocation() {
 	option := &bce.SignOption{
 		//Timestamp:                 "2015-11-20T10:00:05Z",
 		ExpirationPeriodInSeconds: 1200,
@@ -32,7 +32,7 @@ func GetBucketLocation() {
 	log.Println(location.LocationConstraint)
 }
 
-func ListBuckets() {
+func listBuckets() {
 	bucketSummary, err := bosClient.ListBuckets(nil)
 
 	if err != nil {
@@ -42,7 +42,16 @@ func ListBuckets() {
 	log.Println(bucketSummary.Buckets)
 }
 
+func createBucket() {
+	err := bosClient.CreateBucket("baidubce-sdk-go-create-bucket-example", nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func main() {
-	GetBucketLocation()
-	ListBuckets()
+	getBucketLocation()
+	listBuckets()
+	createBucket()
 }
