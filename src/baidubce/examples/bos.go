@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-var bosClient bos.Client = bos.DefaultClient
+var bosClient = bos.DefaultClient
 
 func getBucketLocation() {
 	option := &bce.SignOption{

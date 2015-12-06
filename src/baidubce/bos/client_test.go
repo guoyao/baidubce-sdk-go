@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var bosClient Client = DefaultClient
+var bosClient = DefaultClient
 
 func TestGetBucketLocation(t *testing.T) {
 	expected := "bj"

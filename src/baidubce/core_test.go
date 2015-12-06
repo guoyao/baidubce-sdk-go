@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-var credentials Credentials = Credentials{
-	AccessKeyId:     "0b0f67dfb88244b289b72b142befad0c",
+var credentials = Credentials{
+	AccessKeyID:     "0b0f67dfb88244b289b72b142befad0c",
 	SecretAccessKey: "bad522c2126a4618a8125f4b6cf6356f",
 }
 
-var defaultSignOption *SignOption = NewSignOption(
+var defaultSignOption = NewSignOption(
 	"2015-04-27T08:23:49Z",
-	EXPIRATION_PERIOD_IN_SECONDS,
+	ExpirationPeriodInSeconds,
 	getHeaders(),
 	nil,
 )

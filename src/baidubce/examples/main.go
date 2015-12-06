@@ -7,7 +7,7 @@ import (
 
 var credentials = bce.DefaultCredentials
 
-var signOption *bce.SignOption = &bce.SignOption{
+var signOption = &bce.SignOption{
 	Timestamp:                 "2015-11-16T08:13:49Z",
 	ExpirationPeriodInSeconds: 1800,
 }

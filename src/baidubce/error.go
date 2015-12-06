@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 )
 
+// Error is a implementation of error.
 type Error struct {
-	Code, Message, RequestId string
+	Code, Message, RequestID string
 	Raw                      error
 }
 
@@ -17,6 +18,7 @@ func (err *Error) Error() string {
 	return err.Code
 }
 
+// NewErrorFromRaw returns a `Error` instance from another error instance.
 func NewErrorFromRaw(err error) *Error {
 	return &Error{
 		Message: err.Error(),
@@ -24,7 +26,8 @@ func NewErrorFromRaw(err error) *Error {
 	}
 }
 
-func NewErrorFromJson(bytes []byte) *Error {
+// NewErrorFromJSON returns a `Error` instance from bytes.
+func NewErrorFromJSON(bytes []byte) *Error {
 	var err *Error
 	rawError := json.Unmarshal(bytes, &err)
 	if rawError != nil {

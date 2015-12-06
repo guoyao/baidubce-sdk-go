@@ -14,7 +14,7 @@
  * @author guoyao
  */
 
-// Package baidubce define a set of core data structure, and implements a set of core functions
+// Package baidubce define a set of core data structure, and implements a set of core functions.
 package baidubce
 
 import (
@@ -30,36 +30,44 @@ import (
 )
 
 const (
-	EXPIRATION_PERIOD_IN_SECONDS = 1800
+	// ExpirationPeriodInSeconds 1800s is the default expiration period.
+	ExpirationPeriodInSeconds = 1800
 )
 
-var Region map[string]string = map[string]string{
+// Region map of baidubce
+var Region = map[string]string{
 	"bj": "bj.bcebos.com",
 	"gz": "gz.bcebos.com",
 }
 
+// Credentials struct for baidubce.
 type Credentials struct {
-	AccessKeyId     string
+	AccessKeyID     string
 	SecretAccessKey string
 }
 
-func NewCredentials(accessKeyId, secretAccessKey string) *Credentials {
-	return &Credentials{accessKeyId, secretAccessKey}
+// NewCredentials returns an instance of type `Credentials`.
+func NewCredentials(AccessKeyID, secretAccessKey string) *Credentials {
+	return &Credentials{AccessKeyID, secretAccessKey}
 }
 
-var DefaultCredentials Credentials = Credentials{
+// DefaultCredentials provided a default `Credentials` instance.
+var DefaultCredentials = Credentials{
 	os.Getenv("BAIDU_BCE_AK"),
 	os.Getenv("BAIDU_BCE_SK"),
 }
 
+// Config contains options for baidubce api.
 type Config struct {
 	Credentials
 	Endpoint   string
-	ApiVersion string
+	APIVersion string
 }
 
-var DefaultConfig Config = Config{DefaultCredentials, "", "v1"}
+// DefaultConfig provided a default `Config` instance.
+var DefaultConfig = Config{DefaultCredentials, "", "v1"}
 
+// SignOption contains options for signature of baidubce api.
 type SignOption struct {
 	Timestamp                 string
 	ExpirationPeriodInSeconds int
@@ -81,6 +89,7 @@ func (option *SignOption) signedHeadersToString() string {
 	return result
 }
 
+// NewSignOption is the instance factory for `SignOption`.
 func NewSignOption(timestamp string, expirationPeriodInSeconds int,
 	headers map[string]string, headersToSign []string) *SignOption {
 
@@ -88,13 +97,14 @@ func NewSignOption(timestamp string, expirationPeriodInSeconds int,
 		headers, headersToSign, len(headersToSign) > 0}
 }
 
+// GenerateAuthorization returns authorization code of baidubce api.
 func GenerateAuthorization(credentials Credentials, req Request, option *SignOption) string {
 	if option == nil {
 		option = &SignOption{}
 	}
 	option.init()
 
-	authorization := "bce-auth-v1/" + credentials.AccessKeyId
+	authorization := "bce-auth-v1/" + credentials.AccessKeyID
 	authorization += "/" + option.Timestamp
 	authorization += "/" + strconv.Itoa(option.ExpirationPeriodInSeconds)
 	signature := sign(credentials, req, option)
@@ -105,10 +115,12 @@ func GenerateAuthorization(credentials Credentials, req Request, option *SignOpt
 	return authorization
 }
 
+// Client is the base client struct for all products of baidubce.
 type Client struct {
 	Config
 }
 
+// GetBucketName returns the actual name of bucket.
 func (c *Client) GetBucketName(bucketName string) string {
 	if c.Endpoint != "" && !util.MapContains(Region, func(key, value string) bool {
 		return strings.ToLower(value) == strings.ToLower(c.Endpoint)
@@ -119,6 +131,7 @@ func (c *Client) GetBucketName(bucketName string) string {
 	return bucketName
 }
 
+// SendRequest sends a http request to the endpoint of baidubce api.
 func (c *Client) SendRequest(req *Request, option *SignOption) ([]byte, error) {
 	GenerateAuthorization(c.Credentials, *req, option)
 	httpClient := http.Client{}
@@ -141,7 +154,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) ([]byte, error) {
 	}
 
 	if res.StatusCode >= 400 {
-		return body, NewErrorFromJson(body)
+		return body, NewErrorFromJSON(body)
 	}
 
 	return body, nil
@@ -153,7 +166,7 @@ func (option *SignOption) init() {
 	}
 
 	if option.ExpirationPeriodInSeconds <= 0 {
-		option.ExpirationPeriodInSeconds = EXPIRATION_PERIOD_IN_SECONDS
+		option.ExpirationPeriodInSeconds = ExpirationPeriodInSeconds
 	}
 
 	if option.Headers == nil {
@@ -191,7 +204,7 @@ func generateHeaderValidCompareFunc(headerKey string) func(string, string) bool 
 	}
 }
 
-// generate signature
+// sign returns signed signature.
 func sign(credentials Credentials, req Request, option *SignOption) string {
 	signingKey := getSigningKey(credentials, option)
 	req.prepareHeaders(option)
@@ -202,7 +215,7 @@ func sign(credentials Credentials, req Request, option *SignOption) string {
 }
 
 func getSigningKey(credentials Credentials, option *SignOption) string {
-	var authStringPrefix = fmt.Sprintf("bce-auth-v1/%s", credentials.AccessKeyId)
+	var authStringPrefix = fmt.Sprintf("bce-auth-v1/%s", credentials.AccessKeyID)
 	authStringPrefix += "/" + option.Timestamp
 	authStringPrefix += "/" + strconv.Itoa(option.ExpirationPeriodInSeconds)
 

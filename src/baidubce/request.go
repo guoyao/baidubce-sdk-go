@@ -14,7 +14,7 @@
  * @author guoyao
  */
 
-// Package baidubce define a set of core data structure, and implements a set of core functions
+// Package baidubce define a set of core data structure, and implements a set of core functions.
 package baidubce
 
 import (
@@ -25,16 +25,17 @@ import (
 	"strings"
 )
 
-var canonicalHeaders []string = []string{
+var canonicalHeaders = []string{
 	"host",
 	"content-length",
 	"content-type",
 	"content-md5",
 }
 
-// Request is http request, but has some custom functions
+// Request is http request, but has some custom functions.
 type Request http.Request
 
+// NewRequest returns an instance of type `Request`
 func NewRequest(method, uriPath, endpoint string,
 	params map[string]string, body io.Reader) (*Request, error) {
 
@@ -44,7 +45,7 @@ func NewRequest(method, uriPath, endpoint string,
 		host = endpoint
 	}
 
-	url := fmt.Sprintf("%s%s?%s", util.HostToUrl(host), uriPath,
+	url := fmt.Sprintf("%s%s?%s", util.HostToURL(host), uriPath,
 		util.ToCanonicalQueryString(params))
 
 	rawRequest, err := http.NewRequest(method, url, body)
@@ -110,7 +111,7 @@ func (req *Request) canonical(option *SignOption) string {
 
 	canonicalStrings = append(canonicalStrings, req.Method)
 
-	canonicalURI := util.UriEncodeExceptSlash(req.URL.Path)
+	canonicalURI := util.URIEncodeExceptSlash(req.URL.Path)
 	canonicalStrings = append(canonicalStrings, canonicalURI)
 
 	canonicalStrings = append(canonicalStrings, req.URL.RawQuery)

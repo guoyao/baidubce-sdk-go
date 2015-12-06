@@ -6,17 +6,21 @@ import (
 	"fmt"
 )
 
+// Client is the client for bos.
 type Client struct {
 	bce.Client
 }
 
-var DefaultClient Client = Client{bce.Client{bce.DefaultConfig}}
+// DefaultClient provided a default `bos.Client` instance.
+var DefaultClient = Client{bce.Client{bce.DefaultConfig}}
 
+// NewClient returns an instance of type `bos.Client`.
 func NewClient(config bce.Config) Client {
 	bceClient := bce.Client{config}
 	return Client{bceClient}
 }
 
+// GetBucketLocation returns the location of a bucket.
 func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*Location, error) {
 	bucketName = c.GetBucketName(bucketName)
 
@@ -48,8 +52,9 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 	return location, nil
 }
 
+// ListBuckets is for getting a collection of bucket.
 func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, error) {
-	req, err := bce.NewRequest("GET", fmt.Sprintf("/%s/", c.ApiVersion), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("GET", fmt.Sprintf("/%s/", c.APIVersion), c.Endpoint, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -71,12 +76,13 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, error) {
 	return bucketSummary, nil
 }
 
+// CreateBucket is for creating a bucket.
 func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) error {
 	option = &bce.SignOption{
 		HeadersToSign: []string{"date"},
 	}
 
-	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.ApiVersion, bucketName), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
 
 	if err != nil {
 		return err
