@@ -1,10 +1,11 @@
 package bos
 
 import (
-	"baidubce/test"
 	"strconv"
 	"testing"
 	"time"
+
+	"baidubce/test"
 )
 
 var bosClient = DefaultClient

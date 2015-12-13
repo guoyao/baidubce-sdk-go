@@ -1,8 +1,9 @@
 package main
 
 import (
-	bce "baidubce"
 	"fmt"
+
+	bce "baidubce"
 )
 
 var credentials = bce.DefaultCredentials

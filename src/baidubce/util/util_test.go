@@ -1,10 +1,11 @@
 package util
 
 import (
-	"baidubce/test"
 	"strings"
 	"testing"
 	"time"
+
+	"baidubce/test"
 )
 
 const URI string = "http://bos.cn-n1.baidubce.com/v1/example/测试"

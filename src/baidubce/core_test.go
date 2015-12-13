@@ -1,8 +1,9 @@
 package baidubce
 
 import (
-	"baidubce/test"
 	"testing"
+
+	"baidubce/test"
 )
 
 var credentials = Credentials{

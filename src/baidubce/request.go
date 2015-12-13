@@ -18,11 +18,12 @@
 package baidubce
 
 import (
-	"baidubce/util"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+
+	"baidubce/util"
 )
 
 var canonicalHeaders = []string{

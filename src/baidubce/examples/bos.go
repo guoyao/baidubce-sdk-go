@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log"
+
 	bce "baidubce"
 	"baidubce/bos"
-	"log"
 )
 
 var bosClient = bos.DefaultClient

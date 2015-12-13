@@ -18,7 +18,6 @@
 package baidubce
 
 import (
-	"baidubce/util"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,6 +26,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"baidubce/util"
 )
 
 const (

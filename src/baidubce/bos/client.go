@@ -1,9 +1,11 @@
 package bos
 
 import (
-	bce "baidubce"
 	"encoding/json"
 	"fmt"
+
+	bce "baidubce"
+	"baidubce/util"
 )
 
 // Client is the client for bos.
@@ -24,13 +26,7 @@ func NewClient(config bce.Config) Client {
 func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*Location, error) {
 	bucketName = c.GetBucketName(bucketName)
 
-	req, err := bce.NewRequest(
-		"GET",
-		"/"+bucketName,
-		c.Endpoint,
-		map[string]string{"location": ""},
-		nil,
-	)
+	req, err := bce.NewRequest("GET", "/"+bucketName, c.Endpoint, map[string]string{"location": ""}, nil)
 
 	if err != nil {
 		return nil, err
@@ -78,8 +74,14 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, error) {
 
 // CreateBucket is for creating a bucket.
 func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) error {
-	option = &bce.SignOption{
-		HeadersToSign: []string{"date"},
+	if option == nil {
+		option = &bce.SignOption{
+			HeadersToSign: []string{"date"},
+		}
+	} else if option.HeadersToSign == nil {
+		option.HeadersToSign = []string{"date"}
+	} else if !util.Contains(option.HeadersToSign, "date", true) {
+		option.HeadersToSign = append(option.HeadersToSign, "date")
 	}
 
 	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
