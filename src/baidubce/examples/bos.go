@@ -28,6 +28,7 @@ func getBucketLocation() {
 
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	log.Println(location.LocationConstraint)
@@ -38,6 +39,7 @@ func listBuckets() {
 
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	log.Println(bucketSummary.Buckets)
@@ -51,8 +53,22 @@ func createBucket() {
 	}
 }
 
+func doesBucketExist() {
+	//exists, err := bosClient.DoesBucketExist("baidubce-sdk-go-create-bucket-example", nil)
+	exists, err := bosClient.DoesBucketExist("guoyao11122", nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println(exists)
+}
+
 func main() {
-	getBucketLocation()
-	listBuckets()
-	createBucket()
+	//getBucketLocation()
+	//listBuckets()
+	//createBucket()
+
+	doesBucketExist()
 }

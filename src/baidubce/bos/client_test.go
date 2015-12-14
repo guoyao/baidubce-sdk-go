@@ -35,3 +35,15 @@ func TestCreateBucket(t *testing.T) {
 		t.Error(test.Format("CreateBucket", err.Error(), "nil"))
 	}
 }
+
+func TestDoesBucketExist(t *testing.T) {
+	expected := true
+	bucketName := "baidubce-sdk-go"
+	exists, err := bosClient.DoesBucketExist(bucketName, nil)
+
+	if err != nil {
+		t.Error(test.Format("DoesBucketExist", err.Error(), strconv.FormatBool(expected)))
+	} else if exists != expected {
+		t.Error(test.Format("DoesBucketExist", strconv.FormatBool(exists), strconv.FormatBool(expected)))
+	}
+}

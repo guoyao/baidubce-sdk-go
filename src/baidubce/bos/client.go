@@ -32,14 +32,14 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 		return nil, err
 	}
 
-	respBody, err := c.SendRequest(req, option)
+	res, err := c.SendRequest(req, option)
 
 	if err != nil {
 		return nil, err
 	}
 
 	var location *Location
-	err = json.Unmarshal(respBody, &location)
+	err = json.Unmarshal(res.Body, &location)
 
 	if err != nil {
 		return nil, err
@@ -56,14 +56,14 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, error) {
 		return nil, err
 	}
 
-	respBody, err := c.SendRequest(req, option)
+	res, err := c.SendRequest(req, option)
 
 	if err != nil {
 		return nil, err
 	}
 
 	var bucketSummary *BucketSummary
-	err = json.Unmarshal(respBody, &bucketSummary)
+	err = json.Unmarshal(res.Body, &bucketSummary)
 
 	if err != nil {
 		return nil, err
@@ -97,4 +97,25 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) error {
 	}
 
 	return nil
+}
+
+func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (bool, error) {
+	req, err := bce.NewRequest("HEAD", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
+
+	if err != nil {
+		return false, err
+	}
+
+	res, err := c.SendRequest(req, option)
+
+	if res != nil {
+		switch {
+		case res.StatusCode < 400 || res.StatusCode == 403:
+			return true, nil
+		case res.StatusCode == 404:
+			return false, nil
+		}
+	}
+
+	return false, err
 }

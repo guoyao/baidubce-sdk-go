@@ -19,7 +19,6 @@ package baidubce
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
@@ -133,7 +132,7 @@ func (c *Client) GetBucketName(bucketName string) string {
 }
 
 // SendRequest sends a http request to the endpoint of baidubce api.
-func (c *Client) SendRequest(req *Request, option *SignOption) ([]byte, error) {
+func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, error) {
 	GenerateAuthorization(c.Credentials, *req, option)
 	httpClient := http.Client{}
 	res, err := httpClient.Do(req.raw())
@@ -148,17 +147,13 @@ func (c *Client) SendRequest(req *Request, option *SignOption) ([]byte, error) {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		return nil, err
-	}
+	bceResponse := NewResponse(res)
 
 	if res.StatusCode >= 400 {
-		return body, NewErrorFromJSON(body)
+		return bceResponse, NewErrorFromJSON(bceResponse.Body)
 	}
 
-	return body, nil
+	return bceResponse, nil
 }
 
 func (option *SignOption) init() {

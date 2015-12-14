@@ -29,6 +29,10 @@ func NewErrorFromRaw(err error) *Error {
 // NewErrorFromJSON returns a `Error` instance from bytes.
 func NewErrorFromJSON(bytes []byte) *Error {
 	var err *Error
+	if bytes == nil || string(bytes) == "" {
+		bytes = []byte("{}")
+	}
+
 	rawError := json.Unmarshal(bytes, &err)
 	if rawError != nil {
 		return NewErrorFromRaw(rawError)
