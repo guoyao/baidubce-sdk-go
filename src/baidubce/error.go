@@ -18,8 +18,16 @@ func (err *Error) Error() string {
 	return err.Code
 }
 
-// NewErrorFromRaw returns a `Error` instance from another error instance.
-func NewErrorFromRaw(err error) *Error {
+func NewError(err error) *Error {
+	if bceError, ok := err.(*Error); ok {
+		return bceError
+	}
+
+	return newErrorFromRaw(err)
+}
+
+// newErrorFromRaw returns a `Error` instance from another error instance.
+func newErrorFromRaw(err error) *Error {
 	return &Error{
 		Message: err.Error(),
 		Raw:     err,
@@ -34,8 +42,9 @@ func NewErrorFromJSON(bytes []byte) *Error {
 	}
 
 	rawError := json.Unmarshal(bytes, &err)
+
 	if rawError != nil {
-		return NewErrorFromRaw(rawError)
+		return newErrorFromRaw(rawError)
 	}
 
 	return err

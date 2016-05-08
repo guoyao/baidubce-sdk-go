@@ -3,6 +3,7 @@ package bos
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	bce "baidubce"
 	"baidubce/util"
@@ -11,6 +12,17 @@ import (
 // Client is the client for bos.
 type Client struct {
 	bce.Client
+}
+
+// GetBucketName returns the actual name of bucket.
+func (c *Client) GetBucketName(bucketName string) string {
+	if c.Endpoint != "" && !util.MapContains(bce.Region, func(key, value string) bool {
+		return strings.ToLower(value) == strings.ToLower(c.Endpoint)
+	}) {
+		bucketName = ""
+	}
+
+	return bucketName
 }
 
 // DefaultClient provided a default `bos.Client` instance.
@@ -23,57 +35,57 @@ func NewClient(config bce.Config) Client {
 }
 
 // GetBucketLocation returns the location of a bucket.
-func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*Location, error) {
+func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*Location, *bce.Error) {
 	bucketName = c.GetBucketName(bucketName)
 
 	req, err := bce.NewRequest("GET", "/"+bucketName, c.Endpoint, map[string]string{"location": ""}, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, bce.NewError(err)
 	}
 
-	res, err := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option)
 
-	if err != nil {
-		return nil, err
+	if bceError != nil {
+		return nil, bceError
 	}
 
 	var location *Location
 	err = json.Unmarshal(res.Body, &location)
 
 	if err != nil {
-		return nil, err
+		return nil, bce.NewError(err)
 	}
 
 	return location, nil
 }
 
 // ListBuckets is for getting a collection of bucket.
-func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, error) {
+func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error) {
 	req, err := bce.NewRequest("GET", fmt.Sprintf("/%s/", c.APIVersion), c.Endpoint, nil, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, bce.NewError(err)
 	}
 
-	res, err := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option)
 
-	if err != nil {
-		return nil, err
+	if bceError != nil {
+		return nil, bceError
 	}
 
 	var bucketSummary *BucketSummary
 	err = json.Unmarshal(res.Body, &bucketSummary)
 
 	if err != nil {
-		return nil, err
+		return nil, bce.NewError(err)
 	}
 
 	return bucketSummary, nil
 }
 
 // CreateBucket is for creating a bucket.
-func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) error {
+func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Error {
 	if option == nil {
 		option = &bce.SignOption{
 			HeadersToSign: []string{"date"},
@@ -87,26 +99,26 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) error {
 	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
 
 	if err != nil {
-		return err
+		return bce.NewError(err)
 	}
 
-	_, err = c.SendRequest(req, option)
+	_, bceError := c.SendRequest(req, option)
 
-	if err != nil {
-		return err
+	if bceError != nil {
+		return bceError
 	}
 
 	return nil
 }
 
-func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (bool, error) {
+func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (bool, *bce.Error) {
 	req, err := bce.NewRequest("HEAD", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
 
 	if err != nil {
-		return false, err
+		return false, bce.NewError(err)
 	}
 
-	res, err := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option)
 
 	if res != nil {
 		switch {
@@ -117,5 +129,5 @@ func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (boo
 		}
 	}
 
-	return false, err
+	return false, bceError
 }

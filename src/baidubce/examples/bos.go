@@ -54,7 +54,7 @@ func createBucket() {
 }
 
 func doesBucketExist() {
-	//exists, err := bosClient.DoesBucketExist("baidubce-sdk-go-create-bucket-example", nil)
+	// exists, err := bosClient.DoesBucketExist("baidubce-sdk-go-create-bucket-example", nil)
 	exists, err := bosClient.DoesBucketExist("guoyao11122", nil)
 
 	if err != nil {
@@ -66,9 +66,9 @@ func doesBucketExist() {
 }
 
 func main() {
-	//getBucketLocation()
-	//listBuckets()
-	//createBucket()
+	getBucketLocation()
+	listBuckets()
+	createBucket()
 
 	doesBucketExist()
 }

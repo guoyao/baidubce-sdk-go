@@ -120,19 +120,8 @@ type Client struct {
 	Config
 }
 
-// GetBucketName returns the actual name of bucket.
-func (c *Client) GetBucketName(bucketName string) string {
-	if c.Endpoint != "" && !util.MapContains(Region, func(key, value string) bool {
-		return strings.ToLower(value) == strings.ToLower(c.Endpoint)
-	}) {
-		bucketName = ""
-	}
-
-	return bucketName
-}
-
 // SendRequest sends a http request to the endpoint of baidubce api.
-func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, error) {
+func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Error) {
 	GenerateAuthorization(c.Credentials, *req, option)
 	httpClient := http.Client{}
 	res, err := httpClient.Do(req.raw())
@@ -144,7 +133,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, error
 	}()
 
 	if err != nil {
-		return nil, err
+		return nil, NewError(err)
 	}
 
 	bceResponse := NewResponse(res)
