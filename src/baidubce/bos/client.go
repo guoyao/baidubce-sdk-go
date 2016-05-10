@@ -14,6 +14,15 @@ type Client struct {
 	bce.Client
 }
 
+// DefaultClient provided a default `bos.Client` instance.
+var DefaultClient = Client{bce.Client{bce.DefaultConfig}}
+
+// NewClient returns an instance of type `bos.Client`.
+func NewClient(config bce.Config) Client {
+	bceClient := bce.Client{config}
+	return Client{bceClient}
+}
+
 // GetBucketName returns the actual name of bucket.
 func (c *Client) GetBucketName(bucketName string) string {
 	if c.Endpoint != "" && !util.MapContains(bce.Region, func(key, value string) bool {
@@ -23,15 +32,6 @@ func (c *Client) GetBucketName(bucketName string) string {
 	}
 
 	return bucketName
-}
-
-// DefaultClient provided a default `bos.Client` instance.
-var DefaultClient = Client{bce.Client{bce.DefaultConfig}}
-
-// NewClient returns an instance of type `bos.Client`.
-func NewClient(config bce.Config) Client {
-	bceClient := bce.Client{config}
-	return Client{bceClient}
 }
 
 // GetBucketLocation returns the location of a bucket.
@@ -104,11 +104,7 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Er
 
 	_, bceError := c.SendRequest(req, option)
 
-	if bceError != nil {
-		return bceError
-	}
-
-	return nil
+	return bceError
 }
 
 func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (bool, *bce.Error) {
@@ -130,4 +126,16 @@ func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (boo
 	}
 
 	return false, bceError
+}
+
+func (c *Client) DeleteBucket(bucketName string, option *bce.SignOption) *bce.Error {
+	req, err := bce.NewRequest("DELETE", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
+
+	if err != nil {
+		return bce.NewError(err)
+	}
+
+	_, bceError := c.SendRequest(req, option)
+
+	return bceError
 }

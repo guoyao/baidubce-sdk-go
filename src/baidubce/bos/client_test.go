@@ -27,6 +27,7 @@ func TestListBuckets(t *testing.T) {
 	}
 }
 
+/* // See TestDeleteBucket
 func TestCreateBucket(t *testing.T) {
 	bucketName := "baidubce-sdk-go-create-bucket-test-" + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
@@ -35,6 +36,7 @@ func TestCreateBucket(t *testing.T) {
 		t.Error(test.Format("CreateBucket", err.Error(), "nil"))
 	}
 }
+*/
 
 func TestDoesBucketExist(t *testing.T) {
 	expected := true
@@ -45,5 +47,19 @@ func TestDoesBucketExist(t *testing.T) {
 		t.Error(test.Format("DoesBucketExist", err.Error(), strconv.FormatBool(expected)))
 	} else if exists != expected {
 		t.Error(test.Format("DoesBucketExist", strconv.FormatBool(exists), strconv.FormatBool(expected)))
+	}
+}
+
+func TestDeleteBucket(t *testing.T) {
+	bucketName := "baidubce-sdk-go-create-bucket-test-" + strconv.Itoa(int(time.Now().Unix()))
+	err := bosClient.CreateBucket(bucketName, nil)
+
+	if err != nil {
+		t.Error(test.Format("DeleteBucket at creating bucket", err.Error(), "nil"))
+	} else {
+		err := bosClient.DeleteBucket(bucketName, nil)
+		if err != nil {
+			t.Error(test.Format("DeleteBucket", err.Error(), "nil"))
+		}
 	}
 }

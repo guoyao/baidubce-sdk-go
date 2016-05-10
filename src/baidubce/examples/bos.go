@@ -65,10 +65,24 @@ func doesBucketExist() {
 	log.Println(exists)
 }
 
+func deleteBucket() {
+	bucketName := "baidubce-sdk-go-delete-bucket-example"
+	err := bosClient.CreateBucket(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		err := bosClient.DeleteBucket(bucketName, nil)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}
+
 func main() {
 	getBucketLocation()
 	listBuckets()
 	createBucket()
-
 	doesBucketExist()
+	deleteBucket()
 }
