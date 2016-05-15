@@ -55,19 +55,19 @@ func NewRequest(method, uriPath, endpoint string,
 	return req, err
 }
 
+// Add headers to http request
+func (req *Request) AddHeaders(headerMap map[string]string) {
+	for key, value := range headerMap {
+		req.addHeader(key, value)
+	}
+}
+
 func (req *Request) addHeader(key, value string) {
 	req.Header.Add(key, value)
 }
 
 func (req *Request) setHeader(key, value string) {
 	req.Header.Set(key, value)
-}
-
-// Add headers to http request
-func (req *Request) addHeaders(headerMap map[string]string) {
-	for key, value := range headerMap {
-		req.Header.Add(key, value)
-	}
 }
 
 // clear all existed headers
@@ -78,7 +78,7 @@ func (req *Request) clearHeaders() {
 }
 
 func (req *Request) prepareHeaders(option *SignOption) {
-	req.addHeaders(option.Headers)
+	req.AddHeaders(option.Headers)
 
 	if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("host")) {
 		option.Headers["host"] = req.URL.Host

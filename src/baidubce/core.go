@@ -76,6 +76,52 @@ type SignOption struct {
 	headersToSignSpecified    bool
 }
 
+// NewSignOption is the instance factory for `SignOption`.
+func NewSignOption(timestamp string, expirationPeriodInSeconds int,
+	headers map[string]string, headersToSign []string) *SignOption {
+
+	return &SignOption{timestamp, expirationPeriodInSeconds,
+		headers, headersToSign, len(headersToSign) > 0}
+}
+
+func (option *SignOption) init() {
+	if option.Timestamp == "" {
+		option.Timestamp = util.TimeToUTCString(time.Now())
+	}
+
+	if option.ExpirationPeriodInSeconds <= 0 {
+		option.ExpirationPeriodInSeconds = ExpirationPeriodInSeconds
+	}
+
+	if option.Headers == nil {
+		option.Headers = make(map[string]string, 3)
+	} else {
+		util.MapKeyToLower(option.Headers)
+	}
+
+	option.headersToSignSpecified = len(option.HeadersToSign) > 0
+	util.SliceToLower(option.HeadersToSign)
+
+	if !util.Contains(option.HeadersToSign, "host", true) {
+		option.HeadersToSign = append(option.HeadersToSign, "host")
+	}
+
+	if util.Contains(option.HeadersToSign, "date", true) {
+		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("date")) {
+			option.Headers["date"] = time.Now().Format(time.RFC1123)
+		} else {
+			option.Headers["date"] = util.TimeStringToRFC1123(util.GetMapValue(option.Headers, "date", true))
+		}
+	} else if util.Contains(option.HeadersToSign, "x-bce-date", true) {
+		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("x-bce-date")) {
+			option.Headers["x-bce-date"] = option.Timestamp
+		}
+	} else {
+		option.HeadersToSign = append(option.HeadersToSign, "x-bce-date")
+		option.Headers["x-bce-date"] = option.Timestamp
+	}
+}
+
 func (option *SignOption) signedHeadersToString() string {
 	var result string
 	length := len(option.HeadersToSign)
@@ -87,14 +133,6 @@ func (option *SignOption) signedHeadersToString() string {
 	}
 
 	return result
-}
-
-// NewSignOption is the instance factory for `SignOption`.
-func NewSignOption(timestamp string, expirationPeriodInSeconds int,
-	headers map[string]string, headersToSign []string) *SignOption {
-
-	return &SignOption{timestamp, expirationPeriodInSeconds,
-		headers, headersToSign, len(headersToSign) > 0}
 }
 
 // GenerateAuthorization returns authorization code of baidubce api.
@@ -143,44 +181,6 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Erro
 	}
 
 	return bceResponse, nil
-}
-
-func (option *SignOption) init() {
-	if option.Timestamp == "" {
-		option.Timestamp = util.TimeToUTCString(time.Now())
-	}
-
-	if option.ExpirationPeriodInSeconds <= 0 {
-		option.ExpirationPeriodInSeconds = ExpirationPeriodInSeconds
-	}
-
-	if option.Headers == nil {
-		option.Headers = make(map[string]string, 3)
-	} else {
-		util.MapKeyToLower(option.Headers)
-	}
-
-	option.headersToSignSpecified = len(option.HeadersToSign) > 0
-	util.SliceToLower(option.HeadersToSign)
-
-	if !util.Contains(option.HeadersToSign, "host", true) {
-		option.HeadersToSign = append(option.HeadersToSign, "host")
-	}
-
-	if util.Contains(option.HeadersToSign, "date", true) {
-		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("date")) {
-			option.Headers["date"] = time.Now().Format(time.RFC1123)
-		} else {
-			option.Headers["date"] = util.TimeStringToRFC1123(util.GetMapValue(option.Headers, "date", true))
-		}
-	} else if util.Contains(option.HeadersToSign, "x-bce-date", true) {
-		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("x-bce-date")) {
-			option.Headers["x-bce-date"] = option.Timestamp
-		}
-	} else {
-		option.HeadersToSign = append(option.HeadersToSign, "x-bce-date")
-		option.Headers["x-bce-date"] = option.Timestamp
-	}
 }
 
 func generateHeaderValidCompareFunc(headerKey string) func(string, string) bool {

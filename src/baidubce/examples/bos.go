@@ -79,10 +79,40 @@ func deleteBucket() {
 	}
 }
 
+func setBucketPrivate() {
+	bucketName := "baidubce-sdk-go"
+	err := bosClient.SetBucketPrivate(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func setBucketPublicRead() {
+	bucketName := "baidubce-sdk-go"
+	err := bosClient.SetBucketPublicRead(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func setBucketPublicReadWrite() {
+	bucketName := "baidubce-sdk-go"
+	err := bosClient.SetBucketPublicReadWrite(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func main() {
 	getBucketLocation()
 	listBuckets()
 	createBucket()
 	doesBucketExist()
 	deleteBucket()
+	setBucketPublicReadWrite()
+	setBucketPublicRead()
+	setBucketPrivate()
 }

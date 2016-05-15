@@ -139,3 +139,39 @@ func (c *Client) DeleteBucket(bucketName string, option *bce.SignOption) *bce.Er
 
 	return bceError
 }
+
+func (c *Client) SetBucketPrivate(bucketName string, option *bce.SignOption) *bce.Error {
+	return c.setBucketAcl(bucketName, CannedAccessControlList["Private"], option)
+}
+
+func (c *Client) SetBucketPublicRead(bucketName string, option *bce.SignOption) *bce.Error {
+	return c.setBucketAcl(bucketName, CannedAccessControlList["PublicRead"], option)
+}
+
+func (c *Client) SetBucketPublicReadWrite(bucketName string, option *bce.SignOption) *bce.Error {
+	return c.setBucketAcl(bucketName, CannedAccessControlList["PublicReadWrite"], option)
+}
+
+func (c *Client) setBucketAcl(bucketName, acl string, option *bce.SignOption) *bce.Error {
+	if option == nil {
+		option = &bce.SignOption{
+			HeadersToSign: []string{"date"},
+		}
+	} else if option.HeadersToSign == nil {
+		option.HeadersToSign = []string{"date"}
+	} else if !util.Contains(option.HeadersToSign, "date", true) {
+		option.HeadersToSign = append(option.HeadersToSign, "date")
+	}
+	params := map[string]string{"acl": ""}
+	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, nil)
+
+	if err != nil {
+		return bce.NewError(err)
+	}
+
+	headers := map[string]string{"x-bce-acl": acl}
+	req.AddHeaders(headers)
+	_, bceError := c.SendRequest(req, option)
+
+	return bceError
+}
