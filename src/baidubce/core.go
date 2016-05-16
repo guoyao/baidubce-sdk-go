@@ -84,6 +84,20 @@ func NewSignOption(timestamp string, expirationPeriodInSeconds int,
 		headers, headersToSign, len(headersToSign) > 0}
 }
 
+func AddDateToSignOption(option *SignOption) *SignOption {
+	if option == nil {
+		option = &SignOption{
+			HeadersToSign: []string{"date"},
+		}
+	} else if option.HeadersToSign == nil {
+		option.HeadersToSign = []string{"date"}
+	} else if !util.Contains(option.HeadersToSign, "date", true) {
+		option.HeadersToSign = append(option.HeadersToSign, "date")
+	}
+
+	return option
+}
+
 func (option *SignOption) init() {
 	if option.Timestamp == "" {
 		option.Timestamp = util.TimeToUTCString(time.Now())

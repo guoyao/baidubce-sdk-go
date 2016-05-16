@@ -86,16 +86,7 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error
 
 // CreateBucket is for creating a bucket.
 func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Error {
-	if option == nil {
-		option = &bce.SignOption{
-			HeadersToSign: []string{"date"},
-		}
-	} else if option.HeadersToSign == nil {
-		option.HeadersToSign = []string{"date"}
-	} else if !util.Contains(option.HeadersToSign, "date", true) {
-		option.HeadersToSign = append(option.HeadersToSign, "date")
-	}
-
+	option = bce.AddDateToSignOption(option)
 	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
 
 	if err != nil {
@@ -153,15 +144,7 @@ func (c *Client) SetBucketPublicReadWrite(bucketName string, option *bce.SignOpt
 }
 
 func (c *Client) setBucketAcl(bucketName, acl string, option *bce.SignOption) *bce.Error {
-	if option == nil {
-		option = &bce.SignOption{
-			HeadersToSign: []string{"date"},
-		}
-	} else if option.HeadersToSign == nil {
-		option.HeadersToSign = []string{"date"}
-	} else if !util.Contains(option.HeadersToSign, "date", true) {
-		option.HeadersToSign = append(option.HeadersToSign, "date")
-	}
+	option = bce.AddDateToSignOption(option)
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, nil)
 
