@@ -106,7 +106,30 @@ func setBucketPublicReadWrite() {
 	}
 }
 
+func getBucketAcl() {
+	bucketName := "baidubce-sdk-go"
+	bucketAcl, err := bosClient.GetBucketAcl(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println(bucketAcl.Owner.Id)
+
+	for _, accessControl := range bucketAcl.AccessControlList {
+		for _, grantee := range accessControl.Grantee {
+			log.Println(grantee.Id)
+		}
+		for _, permission := range accessControl.Permission {
+			log.Println(permission)
+		}
+	}
+}
+
 func main() {
+	getBucketAcl()
+	return
 	getBucketLocation()
 	listBuckets()
 	createBucket()

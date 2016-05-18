@@ -143,6 +143,30 @@ func (c *Client) SetBucketPublicReadWrite(bucketName string, option *bce.SignOpt
 	return c.setBucketAcl(bucketName, CannedAccessControlList["PublicReadWrite"], option)
 }
 
+func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*BucketAcl, *bce.Error) {
+	params := map[string]string{"acl": ""}
+	req, err := bce.NewRequest("GET", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, nil)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	res, bceError := c.SendRequest(req, option)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	var bucketAcl *BucketAcl
+	err = json.Unmarshal(res.Body, &bucketAcl)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	return bucketAcl, nil
+}
+
 func (c *Client) setBucketAcl(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	option = bce.AddDateToSignOption(option)
 	params := map[string]string{"acl": ""}

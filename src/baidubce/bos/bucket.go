@@ -26,6 +26,20 @@ type BucketSummary struct {
 	Buckets []Bucket
 }
 
+type BucketAcl struct {
+	Owner             BucketOwner
+	AccessControlList []Grant
+}
+
+type Grant struct {
+	Grantee    []BucketGrantee
+	Permission []string
+}
+
+type BucketGrantee struct {
+	Id string
+}
+
 var CannedAccessControlList = map[string]string{
 	"Private":         "private",
 	"PublicRead":      "public-read",
