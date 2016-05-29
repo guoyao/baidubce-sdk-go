@@ -1,6 +1,7 @@
 package bos
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -132,15 +133,15 @@ func (c *Client) DeleteBucket(bucketName string, option *bce.SignOption) *bce.Er
 }
 
 func (c *Client) SetBucketPrivate(bucketName string, option *bce.SignOption) *bce.Error {
-	return c.setBucketAcl(bucketName, CannedAccessControlList["Private"], option)
+	return c.setBucketAclFromString(bucketName, CannedAccessControlList["Private"], option)
 }
 
 func (c *Client) SetBucketPublicRead(bucketName string, option *bce.SignOption) *bce.Error {
-	return c.setBucketAcl(bucketName, CannedAccessControlList["PublicRead"], option)
+	return c.setBucketAclFromString(bucketName, CannedAccessControlList["PublicRead"], option)
 }
 
 func (c *Client) SetBucketPublicReadWrite(bucketName string, option *bce.SignOption) *bce.Error {
-	return c.setBucketAcl(bucketName, CannedAccessControlList["PublicReadWrite"], option)
+	return c.setBucketAclFromString(bucketName, CannedAccessControlList["PublicReadWrite"], option)
 }
 
 func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*BucketAcl, *bce.Error) {
@@ -167,7 +168,28 @@ func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*Bucke
 	return bucketAcl, nil
 }
 
-func (c *Client) setBucketAcl(bucketName, acl string, option *bce.SignOption) *bce.Error {
+func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bce.SignOption) *bce.Error {
+	option = bce.AddDateToSignOption(option)
+
+	byteArray, err := json.Marshal(bucketAcl)
+
+	if err != nil {
+		return bce.NewError(err)
+	}
+
+	params := map[string]string{"acl": ""}
+	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, bytes.NewReader(byteArray))
+
+	if err != nil {
+		return bce.NewError(err)
+	}
+
+	_, bceError := c.SendRequest(req, option)
+
+	return bceError
+}
+
+func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	option = bce.AddDateToSignOption(option)
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, nil)

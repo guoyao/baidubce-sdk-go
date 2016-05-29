@@ -127,8 +127,29 @@ func getBucketAcl() {
 	}
 }
 
+func setBucketAcl() {
+	bucketName := "baidubce-sdk-go"
+	bucketAcl := bos.BucketAcl{
+		AccessControlList: []bos.Grant{
+			bos.Grant{
+				Grantee: []bos.BucketGrantee{
+					bos.BucketGrantee{Id: "ef5a4b19192f4931adcf0e12f82795e2"},
+				},
+				Permission: []string{"FULL_CONTROL"},
+			},
+		},
+	}
+
+	err := bosClient.SetBucketAcl(bucketName, bucketAcl, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func main() {
 	getBucketAcl()
+	setBucketAcl()
 	return
 	getBucketLocation()
 	listBuckets()

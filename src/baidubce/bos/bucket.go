@@ -10,8 +10,8 @@ type Location struct {
 }
 
 type BucketOwner struct {
-	Id          string
-	DisplayName string
+	Id          string `json:"id"`
+	DisplayName string `json:"displayName,omitempty"`
 }
 
 // Bucket is a struct for bucket info.
@@ -27,17 +27,17 @@ type BucketSummary struct {
 }
 
 type BucketAcl struct {
-	Owner             BucketOwner
-	AccessControlList []Grant
+	Owner             BucketOwner `json:"-"`
+	AccessControlList []Grant     `json:"accessControlList"`
 }
 
 type Grant struct {
-	Grantee    []BucketGrantee
-	Permission []string
+	Grantee    []BucketGrantee `json:"grantee"`
+	Permission []string        `json:"permission"`
 }
 
 type BucketGrantee struct {
-	Id string
+	Id string `json:"id"`
 }
 
 var CannedAccessControlList = map[string]string{
