@@ -115,7 +115,7 @@ func getBucketAcl() {
 		return
 	}
 
-	log.Println(bucketAcl.Owner.Id)
+	log.Println(bucketAcl.Owner)
 
 	for _, accessControl := range bucketAcl.AccessControlList {
 		for _, grantee := range accessControl.Grantee {
