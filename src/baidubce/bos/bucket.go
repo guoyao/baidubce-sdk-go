@@ -27,7 +27,7 @@ type BucketSummary struct {
 }
 
 type BucketAcl struct {
-	Owner             BucketOwner `json:"-"`
+	Owner             BucketOwner `json:"owner"`
 	AccessControlList []Grant     `json:"accessControlList"`
 }
 

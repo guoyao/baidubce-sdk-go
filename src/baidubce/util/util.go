@@ -21,6 +21,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -219,4 +220,27 @@ func MapKeyToLower(m map[string]string) {
 	for key, value := range temp {
 		m[key] = value
 	}
+}
+
+// Convert json to map
+func JsonToMap(byteArray []byte, keys ...string) (map[string]interface{}, error) {
+	var m map[string]interface{}
+
+	if err := json.Unmarshal(byteArray, &m); err != nil {
+		return nil, err
+	}
+
+	if keys != nil && len(keys) > 0 {
+		result := make(map[string]interface{}, len(keys))
+
+		for _, k := range keys {
+			if v, ok := m[k]; ok {
+				result[k] = v
+			}
+		}
+
+		return result, nil
+	}
+
+	return m, nil
 }
