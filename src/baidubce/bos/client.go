@@ -170,19 +170,7 @@ func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*Bucke
 
 func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bce.SignOption) *bce.Error {
 	option = bce.AddDateToSignOption(option)
-	byteArray, err := json.Marshal(bucketAcl)
-
-	if err != nil {
-		return bce.NewError(err)
-	}
-
-	m, err := util.JsonToMap(byteArray, "accessControlList")
-
-	if err != nil {
-		return bce.NewError(err)
-	}
-
-	byteArray, err = json.Marshal(m)
+	byteArray, err := util.ToJson(bucketAcl, "accessControlList")
 
 	if err != nil {
 		return bce.NewError(err)

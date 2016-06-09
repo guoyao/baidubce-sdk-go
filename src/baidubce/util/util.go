@@ -244,3 +244,23 @@ func JsonToMap(byteArray []byte, keys ...string) (map[string]interface{}, error)
 
 	return m, nil
 }
+
+func ToJson(i interface{}, keys ...string) ([]byte, error) {
+	byteArray, err := json.Marshal(i)
+
+	if keys == nil || len(keys) == 0 {
+		return byteArray, err
+	}
+
+	if err == nil {
+		m, err := JsonToMap(byteArray, keys...)
+
+		if err != nil {
+			return nil, err
+		}
+
+		byteArray, err = json.Marshal(m)
+	}
+
+	return byteArray, err
+}

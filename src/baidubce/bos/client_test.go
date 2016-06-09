@@ -111,6 +111,28 @@ func TestGetBucketAcl(t *testing.T) {
 	})
 }
 
+func TestSetBucketAcl(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-acl-"
+	method := "SetBucketAcl"
+
+	around(t, method, bucketNamePrefix, func(bucketName string) {
+		bucketAcl := BucketAcl{
+			AccessControlList: []Grant{
+				Grant{
+					Grantee: []BucketGrantee{
+						BucketGrantee{Id: "ef5a4b19192f4931adcf0e12f82795e2"},
+					},
+					Permission: []string{"FULL_CONTROL"},
+				},
+			},
+		}
+		if err := bosClient.SetBucketAcl(bucketName, bucketAcl, nil); err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		}
+	})
+
+}
+
 func around(t *testing.T, method, bucketNamePrefix string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
