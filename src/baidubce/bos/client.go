@@ -3,7 +3,6 @@ package bos
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 
@@ -55,7 +54,7 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 	bucketName = c.GetBucketName(bucketName)
 	params := map[string]string{"location": ""}
 
-	req, err := bce.NewRequest("GET", "/"+bucketName, c.Endpoint, params, nil)
+	req, err := bce.NewRequest("GET", c.GetUriPath(bucketName), c.Endpoint, params, nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -79,7 +78,7 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 
 // ListBuckets is for getting a collection of bucket.
 func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error) {
-	req, err := bce.NewRequest("GET", fmt.Sprintf("/%s/", c.APIVersion), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.Endpoint, nil, nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -104,7 +103,7 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error
 // CreateBucket is for creating a bucket.
 func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Error {
 	option = bce.AddDateToSignOption(option)
-	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("PUT", c.GetUriPath(bucketName), c.Endpoint, nil, nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -116,7 +115,7 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Er
 }
 
 func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (bool, *bce.Error) {
-	req, err := bce.NewRequest("HEAD", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("HEAD", c.GetUriPath(bucketName), c.Endpoint, nil, nil)
 
 	if err != nil {
 		return false, bce.NewError(err)
@@ -137,7 +136,7 @@ func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (boo
 }
 
 func (c *Client) DeleteBucket(bucketName string, option *bce.SignOption) *bce.Error {
-	req, err := bce.NewRequest("DELETE", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("DELETE", c.GetUriPath(bucketName), c.Endpoint, nil, nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -188,7 +187,7 @@ func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*Bucke
 
 func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*BucketAcl, *bce.Error) {
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("GET", "/", c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -219,7 +218,7 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 	}
 
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, bytes.NewReader(byteArray))
+	req, err := bce.NewRequest("PUT", c.GetUriPath(bucketName), c.Endpoint, params, bytes.NewReader(byteArray))
 
 	if err != nil {
 		return bce.NewError(err)
@@ -252,7 +251,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 	}
 
 	option = bce.AddDateToSignOption(option)
-	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s", objectKey), c.GetBucketEndpoint(bucketName), nil, reader)
+	req, err := bce.NewRequest("PUT", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, reader)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -272,7 +271,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	option = bce.AddDateToSignOption(option)
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("PUT", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, nil)
+	req, err := bce.NewRequest("PUT", c.GetUriPath(bucketName), c.Endpoint, params, nil)
 
 	if err != nil {
 		return bce.NewError(err)

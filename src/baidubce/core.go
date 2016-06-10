@@ -172,6 +172,14 @@ type Client struct {
 	Config
 }
 
+func (c *Client) GetUriPath(uriPath string) string {
+	if c.APIVersion != "" {
+		return fmt.Sprintf("/%s/%s", c.APIVersion, uriPath)
+	}
+
+	return fmt.Sprintf("/%s", uriPath)
+}
+
 // SendRequest sends a http request to the endpoint of baidubce api.
 func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Error) {
 	GenerateAuthorization(c.Credentials, *req, option)
