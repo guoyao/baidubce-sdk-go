@@ -1,7 +1,9 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
+	//	"os"
 
 	bce "baidubce"
 	"baidubce/bos"
@@ -147,10 +149,56 @@ func setBucketAcl() {
 	}
 }
 
+func putObject() {
+	bucketName := "baidubce-sdk-go"
+
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+	putObjectResponse, bceError := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		log.Println(putObjectResponse.GetETag())
+	}
+
+	objectKey = "pdf/put-object-from-bytes.pdf"
+	byteArray, err := ioutil.ReadFile("/Users/apple/Downloads/baidubce-sdk-go-test.pdf")
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		putObjectResponse, bceError = bosClient.PutObject(bucketName, objectKey, byteArray, nil, nil)
+
+		if bceError != nil {
+			log.Println(bceError)
+		} else {
+			log.Println(putObjectResponse.GetETag())
+		}
+	}
+
+	/*
+		objectKey = "pdf/put-object-from-file.pdf"
+		file, err := os.Open("/Users/apple/Downloads/baidubce-sdk-go-test.pdf")
+		defer file.Close()
+
+		if err != nil {
+			log.Println(err)
+		} else {
+			bceError = bosClient.PutObject(bucketName, objectKey, file, nil, nil)
+
+			if bceError != nil {
+				log.Println(bceError)
+			}
+		}
+	*/
+}
+
 func main() {
+	putObject()
+	return
 	getBucketAcl()
 	setBucketAcl()
-	return
 	getBucketLocation()
 	listBuckets()
 	createBucket()

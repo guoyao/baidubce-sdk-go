@@ -130,8 +130,23 @@ func TestSetBucketAcl(t *testing.T) {
 			t.Error(test.Format(method, err.Error(), "nil"))
 		}
 	})
-
 }
+
+/*
+func TestPubObject(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-put-object-"
+	method := "PutObject"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, func(bucketName string) {
+		err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		}
+	})
+}
+*/
 
 func around(t *testing.T, method, bucketNamePrefix string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))

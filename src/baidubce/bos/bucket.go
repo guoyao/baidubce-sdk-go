@@ -1,6 +1,7 @@
 package bos
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -38,6 +39,26 @@ type Grant struct {
 
 type BucketGrantee struct {
 	Id string `json:"id"`
+}
+
+type ObjectMetadata struct {
+	CacheControl       string
+	ContentDisposition string
+	ContentLength      uint
+	ContentMD5         string
+	ContentType        string
+	Expires            string
+	UserMetadata       map[string]string
+}
+
+type PutObjectResponse http.Header
+
+func NewPutObjectResponse(h http.Header) PutObjectResponse {
+	return PutObjectResponse(h)
+}
+
+func (res PutObjectResponse) GetETag() string {
+	return res["Etag"][0]
 }
 
 var CannedAccessControlList = map[string]string{
