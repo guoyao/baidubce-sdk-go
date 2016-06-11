@@ -97,9 +97,7 @@ func (option *SignOption) AddHeadersToSign(headers ...string) {
 		option.HeadersToSign = []string{}
 	}
 
-	for _, header := range headers {
-		option.HeadersToSign = append(option.HeadersToSign, header)
-	}
+	option.HeadersToSign = append(option.HeadersToSign, headers...)
 }
 
 func (option *SignOption) AddHeader(key, value string) {
@@ -185,6 +183,10 @@ type Client struct {
 }
 
 func (c *Client) GetUriPath(uriPath string) string {
+	if strings.Index(uriPath, "/") == 0 {
+		uriPath = uriPath[1:]
+	}
+
 	if c.APIVersion != "" {
 		return fmt.Sprintf("/%s/%s", c.APIVersion, uriPath)
 	}
