@@ -3,7 +3,8 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	//	"os"
+	"os"
+	"path"
 
 	bce "baidubce"
 	"baidubce/bos"
@@ -159,11 +160,22 @@ func putObject() {
 	if bceError != nil {
 		log.Println(bceError)
 	} else {
+		log.Println(putObjectResponse)
 		log.Println(putObjectResponse.GetETag())
 	}
 
+	return
+
+	pwd, err := os.Getwd()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	filePath := path.Join(pwd, "baidubce", "examples", "baidubce-sdk-go-test.pdf")
+
 	objectKey = "pdf/put-object-from-bytes.pdf"
-	byteArray, err := ioutil.ReadFile("/Users/apple/Downloads/baidubce-sdk-go-test.pdf")
+	byteArray, err := ioutil.ReadFile(filePath)
 
 	if err != nil {
 		log.Println(err)
@@ -173,25 +185,27 @@ func putObject() {
 		if bceError != nil {
 			log.Println(bceError)
 		} else {
+			log.Println(putObjectResponse)
 			log.Println(putObjectResponse.GetETag())
 		}
 	}
 
-	/*
-		objectKey = "pdf/put-object-from-file.pdf"
-		file, err := os.Open("/Users/apple/Downloads/baidubce-sdk-go-test.pdf")
-		defer file.Close()
+	objectKey = "pdf/put-object-from-file.pdf"
+	file, err := os.Open(filePath)
+	defer file.Close()
 
-		if err != nil {
-			log.Println(err)
+	if err != nil {
+		log.Println(err)
+	} else {
+		putObjectResponse, bceError = bosClient.PutObject(bucketName, objectKey, file, nil, nil)
+
+		if bceError != nil {
+			log.Println(bceError)
 		} else {
-			bceError = bosClient.PutObject(bucketName, objectKey, file, nil, nil)
-
-			if bceError != nil {
-				log.Println(bceError)
-			}
+			log.Println(putObjectResponse)
+			log.Println(putObjectResponse.GetETag())
 		}
-	*/
+	}
 }
 
 func main() {

@@ -57,8 +57,12 @@ func NewPutObjectResponse(h http.Header) PutObjectResponse {
 	return PutObjectResponse(h)
 }
 
+func (res PutObjectResponse) Get(key string) string {
+	return http.Header(res).Get(key)
+}
+
 func (res PutObjectResponse) GetETag() string {
-	return res["Etag"][0]
+	return res.Get("Etag")
 }
 
 var CannedAccessControlList = map[string]string{

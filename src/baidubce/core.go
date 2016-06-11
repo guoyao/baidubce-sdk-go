@@ -84,18 +84,30 @@ func NewSignOption(timestamp string, expirationPeriodInSeconds int,
 		headers, headersToSign, len(headersToSign) > 0}
 }
 
-func AddDateToSignOption(option *SignOption) *SignOption {
+func CheckSignOption(option *SignOption) *SignOption {
 	if option == nil {
-		option = &SignOption{
-			HeadersToSign: []string{"date"},
-		}
-	} else if option.HeadersToSign == nil {
-		option.HeadersToSign = []string{"date"}
-	} else if !util.Contains(option.HeadersToSign, "date", true) {
-		option.HeadersToSign = append(option.HeadersToSign, "date")
+		return &SignOption{}
 	}
 
 	return option
+}
+
+func (option *SignOption) AddHeadersToSign(headers ...string) {
+	if option.HeadersToSign == nil {
+		option.HeadersToSign = []string{}
+	}
+
+	for _, header := range headers {
+		option.HeadersToSign = append(option.HeadersToSign, header)
+	}
+}
+
+func (option *SignOption) AddHeader(key, value string) {
+	if option.Headers == nil {
+		option.Headers = make(map[string]string)
+	}
+
+	option.Headers[key] = value
 }
 
 func (option *SignOption) init() {

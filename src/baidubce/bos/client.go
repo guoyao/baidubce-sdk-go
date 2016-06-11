@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"strings"
 
 	bce "baidubce"
@@ -54,7 +55,7 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 	bucketName = c.GetBucketName(bucketName)
 	params := map[string]string{"location": ""}
 
-	req, err := bce.NewRequest("GET", c.GetUriPath(bucketName), c.Endpoint, params, nil)
+	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -102,8 +103,9 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error
 
 // CreateBucket is for creating a bucket.
 func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Error {
-	option = bce.AddDateToSignOption(option)
-	req, err := bce.NewRequest("PUT", c.GetUriPath(bucketName), c.Endpoint, nil, nil)
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -115,7 +117,7 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Er
 }
 
 func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (bool, *bce.Error) {
-	req, err := bce.NewRequest("HEAD", c.GetUriPath(bucketName), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("HEAD", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
 
 	if err != nil {
 		return false, bce.NewError(err)
@@ -136,7 +138,7 @@ func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (boo
 }
 
 func (c *Client) DeleteBucket(bucketName string, option *bce.SignOption) *bce.Error {
-	req, err := bce.NewRequest("DELETE", c.GetUriPath(bucketName), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("DELETE", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -158,32 +160,6 @@ func (c *Client) SetBucketPublicRead(bucketName string, option *bce.SignOption) 
 func (c *Client) SetBucketPublicReadWrite(bucketName string, option *bce.SignOption) *bce.Error {
 	return c.setBucketAclFromString(bucketName, CannedAccessControlList["PublicReadWrite"], option)
 }
-
-/*
-func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*BucketAcl, *bce.Error) {
-	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("GET", fmt.Sprintf("/%s/%s", c.APIVersion, bucketName), c.Endpoint, params, nil)
-
-	if err != nil {
-		return nil, bce.NewError(err)
-	}
-
-	res, bceError := c.SendRequest(req, option)
-
-	if bceError != nil {
-		return nil, bceError
-	}
-
-	var bucketAcl *BucketAcl
-	err = json.Unmarshal(res.Body, &bucketAcl)
-
-	if err != nil {
-		return nil, bce.NewError(err)
-	}
-
-	return bucketAcl, nil
-}
-*/
 
 func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*BucketAcl, *bce.Error) {
 	params := map[string]string{"acl": ""}
@@ -210,7 +186,8 @@ func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*Bucke
 }
 
 func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bce.SignOption) *bce.Error {
-	option = bce.AddDateToSignOption(option)
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
 	byteArray, err := util.ToJson(bucketAcl, "accessControlList")
 
 	if err != nil {
@@ -218,7 +195,7 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 	}
 
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("PUT", c.GetUriPath(bucketName), c.Endpoint, params, bytes.NewReader(byteArray))
+	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, bytes.NewReader(byteArray))
 
 	if err != nil {
 		return bce.NewError(err)
@@ -245,18 +222,25 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 	} else if byteArray, ok := data.([]byte); ok {
 		reader = bytes.NewReader(byteArray)
 	} else if r, ok := data.(io.Reader); ok {
-		reader = r
+		byteArray, err := ioutil.ReadAll(r)
+
+		if err != nil {
+			return nil, bce.NewError(err)
+		}
+
+		reader = bytes.NewReader(byteArray)
 	} else {
 		panic("data type should be string or []byte or io.Reader.")
 	}
 
-	option = bce.AddDateToSignOption(option)
 	req, err := bce.NewRequest("PUT", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, reader)
 
 	if err != nil {
 		return nil, bce.NewError(err)
 	}
 
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
 	res, bceError := c.SendRequest(req, option)
 
 	if bceError != nil {
@@ -269,9 +253,10 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 }
 
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
-	option = bce.AddDateToSignOption(option)
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("PUT", c.GetUriPath(bucketName), c.Endpoint, params, nil)
+	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
 	if err != nil {
 		return bce.NewError(err)
