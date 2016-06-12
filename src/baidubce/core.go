@@ -108,6 +108,20 @@ func (option *SignOption) AddHeader(key, value string) {
 	option.Headers[key] = value
 }
 
+func (option *SignOption) AddHeaders(headers map[string]string) {
+	if headers == nil {
+		return
+	}
+
+	if option.Headers == nil {
+		option.Headers = make(map[string]string)
+	}
+
+	for key, value := range headers {
+		option.Headers[key] = value
+	}
+}
+
 func (option *SignOption) init() {
 	if option.Timestamp == "" {
 		option.Timestamp = util.TimeToUTCString(time.Now())

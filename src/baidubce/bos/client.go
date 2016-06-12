@@ -241,6 +241,11 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
+
+	if metadata != nil {
+		metadata.MergeToSignOption(option)
+	}
+
 	res, bceError := c.SendRequest(req, option)
 
 	if bceError != nil {

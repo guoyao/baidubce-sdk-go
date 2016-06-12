@@ -2,7 +2,10 @@ package bos
 
 import (
 	"net/http"
+	"strconv"
 	"time"
+
+	bce "baidubce"
 )
 
 // Location is a struct for bucket location info.
@@ -44,11 +47,57 @@ type BucketGrantee struct {
 type ObjectMetadata struct {
 	CacheControl       string
 	ContentDisposition string
-	ContentLength      uint
+	ContentLength      int
 	ContentMD5         string
 	ContentType        string
+	ContentRange       string
 	Expires            string
+	ETag               string
 	UserMetadata       map[string]string
+}
+
+func (metadata *ObjectMetadata) AddUserMetadata(key, value string) {
+	if metadata.UserMetadata == nil {
+		metadata.UserMetadata = make(map[string]string)
+	}
+
+	metadata.UserMetadata[key] = value
+}
+
+func (metadata *ObjectMetadata) MergeToSignOption(option *bce.SignOption) {
+	if metadata.CacheControl != "" {
+		option.AddHeader("Cache-Control", metadata.CacheControl)
+	}
+
+	if metadata.ContentDisposition != "" {
+		option.AddHeader("Content-Disposition", metadata.ContentDisposition)
+	}
+
+	if metadata.ContentLength != 0 {
+		option.AddHeader("Content-Length", strconv.Itoa(metadata.ContentLength))
+	}
+
+	if metadata.ContentMD5 != "" {
+		option.AddHeader("Content-MD5", metadata.ContentMD5)
+	}
+
+	if metadata.ContentType != "" {
+		option.AddHeader("Content-Type", metadata.ContentType)
+	}
+
+	if metadata.ContentRange != "" {
+		option.AddHeader("Content-Range", metadata.ContentRange)
+	}
+
+	if metadata.Expires != "" {
+		option.AddHeader("Expires", metadata.Expires)
+	}
+
+	if metadata.ETag != "" {
+		option.AddHeader("ETag", metadata.ETag)
+	}
+
+	option.AddHeaders(metadata.UserMetadata)
 }
 
 type PutObjectResponse http.Header

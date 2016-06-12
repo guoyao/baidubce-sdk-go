@@ -155,16 +155,19 @@ func putObject() {
 
 	objectKey := "put-object-from-string.txt"
 	str := "Hello World 你好"
-	putObjectResponse, bceError := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+	option := new(bce.SignOption)
+	metadata := new(bos.ObjectMetadata)
+	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
+
+	putObjectResponse, bceError := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
 
 	if bceError != nil {
 		log.Println(bceError)
 	} else {
-		log.Println(putObjectResponse)
+		//log.Println(putObjectResponse)
 		log.Println(putObjectResponse.GetETag())
 	}
-
-	return
 
 	pwd, err := os.Getwd()
 
@@ -185,7 +188,7 @@ func putObject() {
 		if bceError != nil {
 			log.Println(bceError)
 		} else {
-			log.Println(putObjectResponse)
+			//log.Println(putObjectResponse)
 			log.Println(putObjectResponse.GetETag())
 		}
 	}
@@ -202,7 +205,7 @@ func putObject() {
 		if bceError != nil {
 			log.Println(bceError)
 		} else {
-			log.Println(putObjectResponse)
+			//log.Println(putObjectResponse)
 			log.Println(putObjectResponse.GetETag())
 		}
 	}
