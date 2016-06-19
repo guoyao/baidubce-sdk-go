@@ -211,9 +211,35 @@ func putObject() {
 	}
 }
 
+func deleteObject() {
+	bucketName := "baidubce-sdk-go"
+
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	option := new(bce.SignOption)
+	metadata := new(bos.ObjectMetadata)
+	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
+
+	putObjectResponse, bceError := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		log.Println(putObjectResponse.GetETag())
+	}
+
+	bceError = bosClient.DeleteObject(bucketName, objectKey, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	}
+}
+
 func main() {
-	putObject()
+	deleteObject()
 	return
+	putObject()
 	getBucketAcl()
 	setBucketAcl()
 	getBucketLocation()

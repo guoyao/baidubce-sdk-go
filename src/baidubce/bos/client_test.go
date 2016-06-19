@@ -14,7 +14,7 @@ func TestGetBucketLocation(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-get-bucket-location-"
 	method := "GetBucketLocation"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		expected := "bj"
 		location, _ := bosClient.GetBucketLocation(bucketName, nil)
 
@@ -36,14 +36,14 @@ func TestCreateBucket(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-create-bucket-"
 	method := "CreateBucket"
 
-	around(t, method, bucketNamePrefix, nil)
+	around(t, method, bucketNamePrefix, "", nil)
 }
 
 func TestDoesBucketExist(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-does-bucket-exist-"
 	method := "DoesBucketExist"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		expected := true
 		exists, err := bosClient.DoesBucketExist(bucketName, nil)
 
@@ -60,14 +60,14 @@ func TestDeleteBucket(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-delete-bucket-"
 	method := "DeleteBucket"
 
-	around(t, method, bucketNamePrefix, nil)
+	around(t, method, bucketNamePrefix, "", nil)
 }
 
 func TestSetBucketPrivate(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-private-"
 	method := "SetBucketPrivate"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		err := bosClient.SetBucketPrivate(bucketName, nil)
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
@@ -79,7 +79,7 @@ func TestSetBucketPublicRead(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-public-read-"
 	method := "SetBucketPublicRead"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		err := bosClient.SetBucketPublicRead(bucketName, nil)
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
@@ -91,7 +91,7 @@ func TestSetBucketPublicReadWrite(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-public-rw-"
 	method := "SetBucketPublicReadWrite"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		err := bosClient.SetBucketPublicReadWrite(bucketName, nil)
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
@@ -103,7 +103,7 @@ func TestGetBucketAcl(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-get-bucket-acl-"
 	method := "GetBucketAcl"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		_, err := bosClient.GetBucketAcl(bucketName, nil)
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
@@ -115,7 +115,7 @@ func TestSetBucketAcl(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-acl-"
 	method := "SetBucketAcl"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		bucketAcl := BucketAcl{
 			AccessControlList: []Grant{
 				Grant{
@@ -132,23 +132,35 @@ func TestSetBucketAcl(t *testing.T) {
 	})
 }
 
-/*
 func TestPubObject(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-put-object-"
 	method := "PutObject"
 	objectKey := "put-object-from-string.txt"
 	str := "Hello World 你好"
 
-	around(t, method, bucketNamePrefix, func(bucketName string) {
-		err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
 		}
 	})
 }
-*/
 
-func around(t *testing.T, method, bucketNamePrefix string, f func(string)) {
+func TestDeleteObject(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-delete-object-"
+	method := "DeleteObject"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		}
+	})
+}
+
+func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
 
@@ -157,6 +169,14 @@ func around(t *testing.T, method, bucketNamePrefix string, f func(string)) {
 	} else {
 		if f != nil {
 			f(bucketName)
+
+			if objectKey != "" {
+				err = bosClient.DeleteObject(bucketName, objectKey, nil)
+
+				if err != nil {
+					t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+				}
+			}
 		}
 
 		err = bosClient.DeleteBucket(bucketName, nil)

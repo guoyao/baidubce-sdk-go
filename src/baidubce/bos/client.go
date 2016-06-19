@@ -25,6 +25,16 @@ func NewClient(config bce.Config) Client {
 	return Client{bceClient}
 }
 
+func checkObject(objectKey string) {
+	if objectKey == "" {
+		panic("object key should not be empty.")
+	}
+
+	if strings.Index(objectKey, "/") == 0 {
+		panic("object key should not be start with '/'")
+	}
+}
+
 // GetBucketName returns the actual name of bucket.
 func (c *Client) GetBucketName(bucketName string) string {
 	if c.Endpoint != "" && !util.MapContains(bce.Region, func(key, value string) bool {
@@ -207,13 +217,7 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 }
 
 func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metadata *ObjectMetadata, option *bce.SignOption) (PutObjectResponse, *bce.Error) {
-	if objectKey == "" {
-		panic("object key should not be empty.")
-	}
-
-	if strings.Index(objectKey, "/") == 0 {
-		panic("object key should not be start with '/'")
-	}
+	checkObject(objectKey)
 
 	var reader io.Reader
 
@@ -255,6 +259,27 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 	putObjectResponse := NewPutObjectResponse(res.Header)
 
 	return putObjectResponse, nil
+}
+
+func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOption) *bce.Error {
+	checkObject(objectKey)
+
+	req, err := bce.NewRequest("DELETE", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
+
+	if err != nil {
+		return bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	_, bceError := c.SendRequest(req, option)
+
+	if bceError != nil {
+		return bceError
+	}
+
+	return nil
 }
 
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
