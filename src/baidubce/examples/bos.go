@@ -236,9 +236,24 @@ func deleteObject() {
 	}
 }
 
+func listObjects() {
+	bucketName := "baidubce-sdk-go"
+
+	listObjectsResponse, bceError := bosClient.ListObjects(bucketName, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		for _, objectSummary := range listObjectsResponse.Contents {
+			log.Println(objectSummary.Key)
+		}
+	}
+}
+
 func main() {
-	deleteObject()
+	listObjects()
 	return
+	deleteObject()
 	putObject()
 	getBucketAcl()
 	setBucketAcl()

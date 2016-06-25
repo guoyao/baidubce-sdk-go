@@ -114,6 +114,24 @@ func (res PutObjectResponse) GetETag() string {
 	return res.Get("Etag")
 }
 
+type ObjectSummary struct {
+	Key          string
+	LastModified string
+	ETag         string
+	Size         uint
+	Owner        BucketOwner
+}
+
+type ListObjectsResponse struct {
+	Name        string
+	Prefix      string
+	Delimiter   string
+	Marker      string
+	MaxKeys     uint
+	IsTruncated bool
+	Contents    []ObjectSummary
+}
+
 var CannedAccessControlList = map[string]string{
 	"Private":         "private",
 	"PublicRead":      "public-read",

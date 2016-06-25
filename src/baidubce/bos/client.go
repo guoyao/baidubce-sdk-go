@@ -282,6 +282,32 @@ func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOpti
 	return nil
 }
 
+func (c *Client) ListObjects(bucketName string, option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
+	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	res, bceError := c.SendRequest(req, option)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	var listObjectResponse *ListObjectsResponse
+	err = json.Unmarshal(res.Body, &listObjectResponse)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	return listObjectResponse, nil
+}
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
