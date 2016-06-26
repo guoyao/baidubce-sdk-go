@@ -123,13 +123,25 @@ type ObjectSummary struct {
 }
 
 type ListObjectsResponse struct {
-	Name        string
-	Prefix      string
-	Delimiter   string
-	Marker      string
-	MaxKeys     uint
-	IsTruncated bool
-	Contents    []ObjectSummary
+	Name           string
+	Prefix         string
+	Delimiter      string
+	Marker         string
+	NextMarker     string
+	MaxKeys        uint
+	IsTruncated    bool
+	Contents       []ObjectSummary
+	CommonPrefixes []map[string]string
+}
+
+func (listObjectResponse *ListObjectsResponse) GetCommonPrefixes() []string {
+	prefixes := make([]string, 0, len(listObjectResponse.CommonPrefixes))
+
+	for _, commonPrefix := range listObjectResponse.CommonPrefixes {
+		prefixes = append(prefixes, commonPrefix["prefix"])
+	}
+
+	return prefixes
 }
 
 var CannedAccessControlList = map[string]string{

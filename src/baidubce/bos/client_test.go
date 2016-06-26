@@ -171,7 +171,7 @@ func TestListObjects(t *testing.T) {
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
 		} else {
-			listObjectResponse, err := bosClient.ListObjects(bucketName, nil)
+			listObjectResponse, err := bosClient.ListObjects(bucketName, nil, nil)
 			if err != nil {
 				t.Error(test.Format(method, err.Error(), "nil"))
 			} else if length := len(listObjectResponse.Contents); length != 1 {

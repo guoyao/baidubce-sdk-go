@@ -236,14 +236,25 @@ func deleteObject() {
 
 func listObjects() {
 	bucketName := "baidubce-sdk-go"
+	params := map[string]string{
+		"prefix":    "pdf/",
+		"delimiter": "/",
+		"marker":    "",
+		//"marker":    "pdf/put-object-from-bytes.pdf",
+		"maxKeys": "1000",
+	}
 
-	listObjectsResponse, bceError := bosClient.ListObjects(bucketName, nil)
+	listObjectsResponse, bceError := bosClient.ListObjects(bucketName, params, nil)
 
 	if bceError != nil {
 		log.Println(bceError)
 	} else {
 		for _, objectSummary := range listObjectsResponse.Contents {
 			fmt.Println(objectSummary.Key)
+		}
+
+		for _, prefix := range listObjectsResponse.GetCommonPrefixes() {
+			fmt.Println(prefix)
 		}
 	}
 }

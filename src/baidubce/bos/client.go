@@ -282,8 +282,8 @@ func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOpti
 	return nil
 }
 
-func (c *Client) ListObjects(bucketName string, option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
-	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
+func (c *Client) ListObjects(bucketName string, params map[string]string, option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
+	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
