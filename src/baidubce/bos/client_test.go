@@ -160,6 +160,28 @@ func TestDeleteObject(t *testing.T) {
 	})
 }
 
+func TestListObjects(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-list-objects-"
+	method := "ListObjects"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else {
+			listObjectResponse, err := bosClient.ListObjects(bucketName, nil)
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else if length := len(listObjectResponse.Contents); length != 1 {
+				t.Error(test.Format(method, strconv.Itoa(length), "1"))
+			}
+		}
+	})
+
+}
+
 func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
