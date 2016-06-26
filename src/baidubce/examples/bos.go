@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -34,7 +35,7 @@ func getBucketLocation() {
 		return
 	}
 
-	log.Println(location.LocationConstraint)
+	fmt.Println(location.LocationConstraint)
 }
 
 func listBuckets() {
@@ -45,7 +46,7 @@ func listBuckets() {
 		return
 	}
 
-	log.Println(bucketSummary.Buckets)
+	fmt.Println(bucketSummary.Buckets)
 }
 
 func createBucket() {
@@ -65,7 +66,7 @@ func doesBucketExist() {
 		return
 	}
 
-	log.Println(exists)
+	fmt.Println(exists)
 }
 
 func deleteBucket() {
@@ -118,14 +119,14 @@ func getBucketAcl() {
 		return
 	}
 
-	log.Println(bucketAcl.Owner)
+	fmt.Println(bucketAcl.Owner)
 
 	for _, accessControl := range bucketAcl.AccessControlList {
 		for _, grantee := range accessControl.Grantee {
-			log.Println(grantee.Id)
+			fmt.Println(grantee.Id)
 		}
 		for _, permission := range accessControl.Permission {
-			log.Println(permission)
+			fmt.Println(permission)
 		}
 	}
 }
@@ -165,8 +166,7 @@ func putObject() {
 	if bceError != nil {
 		log.Println(bceError)
 	} else {
-		//log.Println(putObjectResponse)
-		log.Println(putObjectResponse.GetETag())
+		fmt.Println(putObjectResponse.GetETag())
 	}
 
 	pwd, err := os.Getwd()
@@ -188,8 +188,7 @@ func putObject() {
 		if bceError != nil {
 			log.Println(bceError)
 		} else {
-			//log.Println(putObjectResponse)
-			log.Println(putObjectResponse.GetETag())
+			fmt.Println(putObjectResponse.GetETag())
 		}
 	}
 
@@ -205,8 +204,7 @@ func putObject() {
 		if bceError != nil {
 			log.Println(bceError)
 		} else {
-			//log.Println(putObjectResponse)
-			log.Println(putObjectResponse.GetETag())
+			fmt.Println(putObjectResponse.GetETag())
 		}
 	}
 }
@@ -226,7 +224,7 @@ func deleteObject() {
 	if bceError != nil {
 		log.Println(bceError)
 	} else {
-		log.Println(putObjectResponse.GetETag())
+		fmt.Println(putObjectResponse.GetETag())
 	}
 
 	bceError = bosClient.DeleteObject(bucketName, objectKey, nil)
@@ -245,7 +243,7 @@ func listObjects() {
 		log.Println(bceError)
 	} else {
 		for _, objectSummary := range listObjectsResponse.Contents {
-			log.Println(objectSummary.Key)
+			fmt.Println(objectSummary.Key)
 		}
 	}
 }
