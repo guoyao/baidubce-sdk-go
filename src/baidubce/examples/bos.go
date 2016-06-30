@@ -259,9 +259,26 @@ func listObjects() {
 	}
 }
 
+func copyObject() {
+	srcBucketName := "baidubce-sdk-go"
+	srcKey := "baidubce-sdk-go-test.pdf"
+	destBucketName := "baidubce-sdk-go"
+	destKey := "pdf/baidubce-sdk-go-test-copy.pdf"
+
+	copyObjectResponse, bceError := bosClient.CopyObject(srcBucketName, srcKey, destBucketName, destKey, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		fmt.Println(copyObjectResponse.ETag)
+		fmt.Println(copyObjectResponse.LastModified)
+	}
+}
+
 func main() {
-	listObjects()
+	copyObject()
 	return
+	listObjects()
 	deleteObject()
 	putObject()
 	getBucketAcl()

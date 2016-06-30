@@ -144,6 +144,11 @@ func (listObjectResponse *ListObjectsResponse) GetCommonPrefixes() []string {
 	return prefixes
 }
 
+type CopyObjectResponse struct {
+	ETag         string
+	LastModified time.Time
+}
+
 var CannedAccessControlList = map[string]string{
 	"Private":         "private",
 	"PublicRead":      "public-read",

@@ -3,6 +3,7 @@ package bos
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -25,7 +26,17 @@ func NewClient(config bce.Config) Client {
 	return Client{bceClient}
 }
 
-func checkObject(objectKey string) {
+func checkBucketName(bucketName string) {
+	if bucketName == "" {
+		panic("bucket name should not be empty.")
+	}
+
+	if strings.Index(bucketName, "/") == 0 {
+		panic("bucket name should not be start with '/'")
+	}
+}
+
+func checkObjectKey(objectKey string) {
 	if objectKey == "" {
 		panic("object key should not be empty.")
 	}
@@ -217,7 +228,7 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 }
 
 func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metadata *ObjectMetadata, option *bce.SignOption) (PutObjectResponse, *bce.Error) {
-	checkObject(objectKey)
+	checkObjectKey(objectKey)
 
 	var reader io.Reader
 
@@ -262,7 +273,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 }
 
 func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOption) *bce.Error {
-	checkObject(objectKey)
+	checkObjectKey(objectKey)
 
 	req, err := bce.NewRequest("DELETE", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
 
@@ -306,6 +317,39 @@ func (c *Client) ListObjects(bucketName string, params map[string]string, option
 	}
 
 	return listObjectResponse, nil
+}
+
+func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey string, option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
+	checkBucketName(srcBucketName)
+	checkBucketName(destBucketName)
+	checkObjectKey(srcKey)
+	checkObjectKey(destKey)
+
+	req, err := bce.NewRequest("PUT", c.GetUriPath(destKey), c.GetBucketEndpoint(destBucketName), nil, nil)
+	headers := map[string]string{"x-bce-copy-source": fmt.Sprintf("/%s/%s", srcBucketName, srcKey)}
+	req.AddHeaders(headers)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	res, bceError := c.SendRequest(req, option)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	var copyObjectResponse *CopyObjectResponse
+	err = json.Unmarshal(res.Body, &copyObjectResponse)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	return copyObjectResponse, nil
 }
 
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {

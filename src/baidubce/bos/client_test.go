@@ -179,7 +179,38 @@ func TestListObjects(t *testing.T) {
 			}
 		}
 	})
+}
 
+func TestCopyObject(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-copy-object-"
+	method := "CopyObject"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else {
+			destKey := "put-object-from-string-copy.txt"
+			_, err := bosClient.CopyObject(bucketName, objectKey, bucketName, destKey, nil)
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else {
+				listObjectResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+				if err != nil {
+					t.Error(test.Format(method, err.Error(), "nil"))
+				} else if length := len(listObjectResponse.Contents); length != 2 {
+					t.Error(test.Format(method, strconv.Itoa(length), "2"))
+				} else {
+					err = bosClient.DeleteObject(bucketName, destKey, nil)
+					if err != nil {
+						t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+					}
+				}
+			}
+		}
+	})
 }
 
 func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
