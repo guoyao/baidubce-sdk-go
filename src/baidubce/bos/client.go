@@ -309,14 +309,14 @@ func (c *Client) ListObjects(bucketName string, params map[string]string, option
 		return nil, bceError
 	}
 
-	var listObjectResponse *ListObjectsResponse
-	err = json.Unmarshal(res.Body, &listObjectResponse)
+	var listObjectsResponse *ListObjectsResponse
+	err = json.Unmarshal(res.Body, &listObjectsResponse)
 
 	if err != nil {
 		return nil, bce.NewError(err)
 	}
 
-	return listObjectResponse, nil
+	return listObjectsResponse, nil
 }
 
 func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey string, option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {

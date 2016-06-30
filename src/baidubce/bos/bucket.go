@@ -134,10 +134,10 @@ type ListObjectsResponse struct {
 	CommonPrefixes []map[string]string
 }
 
-func (listObjectResponse *ListObjectsResponse) GetCommonPrefixes() []string {
-	prefixes := make([]string, 0, len(listObjectResponse.CommonPrefixes))
+func (listObjectsResponse *ListObjectsResponse) GetCommonPrefixes() []string {
+	prefixes := make([]string, 0, len(listObjectsResponse.CommonPrefixes))
 
-	for _, commonPrefix := range listObjectResponse.CommonPrefixes {
+	for _, commonPrefix := range listObjectsResponse.CommonPrefixes {
 		prefixes = append(prefixes, commonPrefix["prefix"])
 	}
 

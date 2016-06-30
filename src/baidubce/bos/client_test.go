@@ -171,10 +171,10 @@ func TestListObjects(t *testing.T) {
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
 		} else {
-			listObjectResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+			listObjectsResponse, err := bosClient.ListObjects(bucketName, nil, nil)
 			if err != nil {
 				t.Error(test.Format(method, err.Error(), "nil"))
-			} else if length := len(listObjectResponse.Contents); length != 1 {
+			} else if length := len(listObjectsResponse.Contents); length != 1 {
 				t.Error(test.Format(method, strconv.Itoa(length), "1"))
 			}
 		}
@@ -197,10 +197,10 @@ func TestCopyObject(t *testing.T) {
 			if err != nil {
 				t.Error(test.Format(method, err.Error(), "nil"))
 			} else {
-				listObjectResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil, nil)
 				if err != nil {
 					t.Error(test.Format(method, err.Error(), "nil"))
-				} else if length := len(listObjectResponse.Contents); length != 2 {
+				} else if length := len(listObjectsResponse.Contents); length != 2 {
 					t.Error(test.Format(method, strconv.Itoa(length), "2"))
 				} else {
 					err = bosClient.DeleteObject(bucketName, destKey, nil)
