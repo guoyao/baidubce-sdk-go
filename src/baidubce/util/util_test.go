@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +34,15 @@ func TestTimeToUTCString(t *testing.T) {
 	utc := TimeToUTCString(datetime)
 	if utc != expected {
 		t.Error(test.Format("TimeToUTCString", utc, expected))
+	}
+}
+
+func TestTimeStringToRFC1123(t *testing.T) {
+	expected := "Mon, 16 Nov 2015 07:33:15 UTC"
+	result := TimeStringToRFC1123("2015-11-16T07:33:15Z")
+
+	if result != expected {
+		t.Error(test.Format("TimeStringToRFC1123", result, expected))
 	}
 }
 
@@ -78,6 +88,89 @@ func TestToCanonicalHeaderString(t *testing.T) {
 
 	if canonicalHeader != expected {
 		t.Error(test.Format("ToCanonicalHeaderString", canonicalHeader, expected))
+	}
+}
+
+func TestURLEncode(t *testing.T) {
+	expected := "test-%E6%B5%8B%E8%AF%95"
+	result := URLEncode("test-测试")
+
+	if result != expected {
+		t.Error(test.Format("URLEncode", result, expected))
+	}
+}
+
+func TestSliceToLower(t *testing.T) {
+	expected := "name age"
+	arr := []string{"Name", "Age"}
+	SliceToLower(arr)
+
+	result := fmt.Sprintf("%s %s", arr[0], arr[1])
+
+	if result != expected {
+		t.Error(test.Format("SliceToLower", result, expected))
+	}
+}
+
+func TestMapKeyToLower(t *testing.T) {
+	expected := "name gender"
+	m := map[string]string{"Name": "guoyao", "Gender": "male"}
+	MapKeyToLower(m)
+
+	result := ""
+
+	if _, ok := m["name"]; ok {
+		result += "name"
+	}
+
+	if _, ok := m["gender"]; ok {
+		result += " gender"
+	}
+
+	if result != expected {
+		t.Error(test.Format("MapKeyToLower", result, expected))
+	}
+}
+
+func TestToMap(t *testing.T) {
+	p := struct {
+		Name   string
+		Age    int
+		Gender string
+	}{"guoyao", 10, "male"}
+
+	m, err := ToMap(p, "Name", "Age")
+
+	if err != nil {
+		t.Error(test.Format("ToMap", err.Error(), "nil"))
+	} else {
+		expected := "guoyao:10"
+		result := fmt.Sprintf("%s:%v", m["Name"], m["Age"])
+
+		if result != expected {
+			t.Error(test.Format("ToMap", result, expected))
+		}
+	}
+}
+
+func TestToJson(t *testing.T) {
+	p := struct {
+		Name   string `json:"name"`
+		Age    int    `json:"age"`
+		Gender string `json:"gender"`
+	}{"guoyao", 10, "male"}
+
+	byteArray, err := ToJson(p, "name", "age")
+
+	if err != nil {
+		t.Error(test.Format("ToMap", err.Error(), "nil"))
+	} else {
+		expected := "{\"age\":10,\"name\":\"guoyao\"}"
+		result := string(byteArray)
+
+		if result != expected {
+			t.Error(test.Format("ToMap", result, expected))
+		}
 	}
 }
 
