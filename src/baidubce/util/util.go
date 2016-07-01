@@ -155,7 +155,9 @@ func HostToURL(host string) string {
 		return host
 	}
 
-	return "http://" + host
+	protocol := "http"
+
+	return fmt.Sprintf("%s://%s", protocol, host)
 }
 
 // ToCanonicalQueryString returns the canonicalized query string.
@@ -222,9 +224,24 @@ func MapKeyToLower(m map[string]string) {
 	}
 }
 
-// Convert json to map
-func JsonToMap(byteArray []byte, keys ...string) (map[string]interface{}, error) {
+// Convert anything to map
+func ToMap(i interface{}, keys ...string) (map[string]interface{}, error) {
 	var m map[string]interface{}
+	var byteArray []byte
+
+	if str, ok := i.(string); ok {
+		byteArray = []byte(str)
+	} else if b, ok := i.([]byte); ok {
+		byteArray = b
+	} else {
+		b, err := json.Marshal(i)
+
+		if err != nil {
+			return nil, err
+		}
+
+		byteArray = b
+	}
 
 	if err := json.Unmarshal(byteArray, &m); err != nil {
 		return nil, err
@@ -253,7 +270,7 @@ func ToJson(i interface{}, keys ...string) ([]byte, error) {
 	}
 
 	if err == nil {
-		m, err := JsonToMap(byteArray, keys...)
+		m, err := ToMap(byteArray, keys...)
 
 		if err != nil {
 			return nil, err

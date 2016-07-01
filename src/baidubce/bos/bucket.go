@@ -3,9 +3,11 @@ package bos
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	bce "baidubce"
+	"baidubce/util"
 )
 
 // Location is a struct for bucket location info.
@@ -50,10 +52,12 @@ type ObjectMetadata struct {
 	ContentLength      int
 	ContentMD5         string
 	ContentType        string
-	ContentRange       string
 	Expires            string
-	ETag               string
-	UserMetadata       map[string]string
+	ContentSha256      string
+
+	ContentRange string
+	ETag         string
+	UserMetadata map[string]string
 }
 
 func (metadata *ObjectMetadata) AddUserMetadata(key, value string) {
@@ -85,19 +89,17 @@ func (metadata *ObjectMetadata) MergeToSignOption(option *bce.SignOption) {
 		option.AddHeader("Content-Type", metadata.ContentType)
 	}
 
-	if metadata.ContentRange != "" {
-		option.AddHeader("Content-Range", metadata.ContentRange)
-	}
-
 	if metadata.Expires != "" {
 		option.AddHeader("Expires", metadata.Expires)
 	}
 
-	if metadata.ETag != "" {
-		option.AddHeader("ETag", metadata.ETag)
+	if metadata.ContentSha256 != "" {
+		option.AddHeader("x-bce-content-sha256", metadata.ContentSha256)
 	}
 
-	option.AddHeaders(metadata.UserMetadata)
+	for key, value := range metadata.UserMetadata {
+		option.AddHeader(ToUserDefinedMetadata(key), value)
+	}
 }
 
 type PutObjectResponse http.Header
@@ -149,8 +151,59 @@ type CopyObjectResponse struct {
 	LastModified time.Time
 }
 
+type CopyObjectRequest struct {
+	SrcBucketName         string          `json:"-"`
+	SrcKey                string          `json:"-"`
+	DestBucketName        string          `json:"-"`
+	DestKey               string          `json:"-"`
+	ObjectMetadata        *ObjectMetadata `json:"-"`
+	SourceMatch           string          `json:"x-bce-copy-source-if-match,omitempty"`
+	SourceNoneMatch       string          `json:"x-bce-copy-source-if-none-match,omitempty"`
+	SourceModifiedSince   string          `json:"x-bce-copy-source-if-modified-since,omitempty"`
+	SourceUnmodifiedSince string          `json:"x-bce-copy-source-if-unmodified-since,omitempty"`
+}
+
+func (copyObjectRequest *CopyObjectRequest) MergeToSignOption(option *bce.SignOption) {
+	m, err := util.ToMap(copyObjectRequest)
+
+	if err != nil {
+		return
+	}
+
+	headerMap := make(map[string]string)
+
+	for key, value := range m {
+		if str, ok := value.(string); ok {
+			headerMap[key] = str
+		}
+	}
+
+	option.AddHeaders(headerMap)
+
+	if copyObjectRequest.ObjectMetadata != nil {
+		option.AddHeader("x-bce-metadata-directive", "replace")
+		copyObjectRequest.ObjectMetadata.MergeToSignOption(option)
+	} else {
+		option.AddHeader("x-bce-metadata-directive", "copy")
+	}
+}
+
+var UserDefinedMetadataPrefix = "x-bce-meta-"
+
 var CannedAccessControlList = map[string]string{
 	"Private":         "private",
 	"PublicRead":      "public-read",
 	"PublicReadWrite": "public-read-write",
+}
+
+func IsUserDefinedMetadata(metadata string) bool {
+	return strings.Index(metadata, UserDefinedMetadataPrefix) == 0
+}
+
+func ToUserDefinedMetadata(metadata string) string {
+	if IsUserDefinedMetadata(metadata) {
+		return metadata
+	}
+
+	return UserDefinedMetadataPrefix + metadata
 }

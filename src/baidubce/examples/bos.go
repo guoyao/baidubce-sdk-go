@@ -237,7 +237,7 @@ func deleteObject() {
 func listObjects() {
 	bucketName := "baidubce-sdk-go"
 	params := map[string]string{
-		"prefix":    "pdf/",
+		//"prefix":    "pdf/",
 		"delimiter": "/",
 		"marker":    "",
 		//"marker":    "pdf/put-object-from-bytes.pdf",
@@ -250,7 +250,7 @@ func listObjects() {
 		log.Println(bceError)
 	} else {
 		for _, objectSummary := range listObjectsResponse.Contents {
-			fmt.Println(objectSummary.Key)
+			fmt.Println(objectSummary.Key, objectSummary.ETag)
 		}
 
 		for _, prefix := range listObjectsResponse.GetCommonPrefixes() {
@@ -270,16 +270,47 @@ func copyObject() {
 	if bceError != nil {
 		log.Println(bceError)
 	} else {
-		fmt.Println(copyObjectResponse.ETag)
-		fmt.Println(copyObjectResponse.LastModified)
+		fmt.Println(copyObjectResponse.ETag, copyObjectResponse.LastModified)
 	}
 }
 
+func copyObjectFromRequest() {
+	etag := "fa412a6ca6d415208be69bc4a00f4103"
+
+	copyObjectRequest := &bos.CopyObjectRequest{
+		SrcBucketName:  "baidubce-sdk-go",
+		SrcKey:         "baidubce-sdk-go-test.pdf",
+		DestBucketName: "baidubce-sdk-go",
+		DestKey:        "pdf/baidubce-sdk-go-test-copy.pdf",
+		//SourceMatch:    etag,
+		SourceNoneMatch: etag,
+		//SourceModifiedSince:   "2016-05-28T22:32:00Z",
+		//SourceUnmodifiedSince: "2016-05-28T22:32:00Z",
+		ObjectMetadata: &bos.ObjectMetadata{
+			CacheControl: "no-cache",
+			UserMetadata: map[string]string{
+				"test-user-metadata": "test user metadata",
+				"x-bce-meta-name":    "x-bce-meta-name",
+			},
+		},
+	}
+
+	copyObjectResponse, bceError := bosClient.CopyObjectFromRequest(copyObjectRequest, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		fmt.Println(copyObjectResponse.ETag, copyObjectResponse.LastModified)
+	}
+
+}
+
 func main() {
-	copyObject()
+	copyObjectFromRequest()
 	return
-	listObjects()
+	copyObject()
 	deleteObject()
+	listObjects()
 	putObject()
 	getBucketAcl()
 	setBucketAcl()

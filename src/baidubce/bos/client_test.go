@@ -189,21 +189,76 @@ func TestCopyObject(t *testing.T) {
 
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
 		} else {
 			destKey := "put-object-from-string-copy.txt"
 			_, err := bosClient.CopyObject(bucketName, objectKey, bucketName, destKey, nil)
+
 			if err != nil {
 				t.Error(test.Format(method, err.Error(), "nil"))
 			} else {
 				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+
 				if err != nil {
 					t.Error(test.Format(method, err.Error(), "nil"))
 				} else if length := len(listObjectsResponse.Contents); length != 2 {
 					t.Error(test.Format(method, strconv.Itoa(length), "2"))
 				} else {
 					err = bosClient.DeleteObject(bucketName, destKey, nil)
+
+					if err != nil {
+						t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+					}
+				}
+			}
+		}
+	})
+}
+
+func TestCopyObjectFromRequest(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-copy-object-from-request-"
+	method := "CopyObjectFromRequest"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else {
+			destKey := "put-object-from-string-copy.txt"
+
+			copyObjectRequest := &CopyObjectRequest{
+				SrcBucketName:  bucketName,
+				SrcKey:         objectKey,
+				DestBucketName: bucketName,
+				DestKey:        destKey,
+				ObjectMetadata: &ObjectMetadata{
+					CacheControl: "no-cache",
+					UserMetadata: map[string]string{
+						"test-user-metadata": "test user metadata",
+						"x-bce-meta-name":    "x-bce-meta-name",
+					},
+				},
+			}
+
+			_, err := bosClient.CopyObjectFromRequest(copyObjectRequest, nil)
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else {
+				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+
+				if err != nil {
+					t.Error(test.Format(method, err.Error(), "nil"))
+				} else if length := len(listObjectsResponse.Contents); length != 2 {
+					t.Error(test.Format(method, strconv.Itoa(length), "2"))
+				} else {
+					err = bosClient.DeleteObject(bucketName, destKey, nil)
+
 					if err != nil {
 						t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
 					}

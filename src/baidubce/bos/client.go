@@ -326,8 +326,6 @@ func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey strin
 	checkObjectKey(destKey)
 
 	req, err := bce.NewRequest("PUT", c.GetUriPath(destKey), c.GetBucketEndpoint(destBucketName), nil, nil)
-	headers := map[string]string{"x-bce-copy-source": fmt.Sprintf("/%s/%s", srcBucketName, srcKey)}
-	req.AddHeaders(headers)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -335,6 +333,42 @@ func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey strin
 
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
+	option.AddHeader("x-bce-copy-source", fmt.Sprintf("/%s/%s", srcBucketName, srcKey))
+
+	res, bceError := c.SendRequest(req, option)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	var copyObjectResponse *CopyObjectResponse
+	err = json.Unmarshal(res.Body, &copyObjectResponse)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	return copyObjectResponse, nil
+}
+
+func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest, option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
+	checkBucketName(copyObjectRequest.SrcBucketName)
+	checkBucketName(copyObjectRequest.DestBucketName)
+	checkObjectKey(copyObjectRequest.SrcKey)
+	checkObjectKey(copyObjectRequest.DestKey)
+
+	req, err := bce.NewRequest("PUT", c.GetUriPath(copyObjectRequest.DestKey), c.GetBucketEndpoint(copyObjectRequest.DestBucketName), nil, nil)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	source := util.URIEncodeExceptSlash(fmt.Sprintf("/%s/%s", copyObjectRequest.SrcBucketName, copyObjectRequest.SrcKey))
+	option.AddHeader("x-bce-copy-source", source)
+	copyObjectRequest.MergeToSignOption(option)
 
 	res, bceError := c.SendRequest(req, option)
 
