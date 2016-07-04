@@ -29,9 +29,24 @@ type Response struct {
 }
 
 // NewResponse returns an instance of type `Response`
-func NewResponse(res *http.Response) *Response {
+func NewResponse(res *http.Response, autoReadAllBytesFromBody bool) (*Response, error) {
 	response := &Response{Response: res}
-	body, _ := ioutil.ReadAll(res.Body)
-	response.Body = body
-	return response
+
+	if autoReadAllBytesFromBody {
+		defer func() {
+			if res != nil {
+				res.Body.Close()
+			}
+		}()
+
+		body, err := ioutil.ReadAll(res.Body)
+
+		if err != nil {
+			return nil, err
+		}
+
+		response.Body = body
+	}
+
+	return response, nil
 }

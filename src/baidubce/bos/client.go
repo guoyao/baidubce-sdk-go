@@ -82,7 +82,7 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 		return nil, bce.NewError(err)
 	}
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return nil, bceError
@@ -106,7 +106,7 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error
 		return nil, bce.NewError(err)
 	}
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return nil, bceError
@@ -132,7 +132,7 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Er
 		return bce.NewError(err)
 	}
 
-	_, bceError := c.SendRequest(req, option)
+	_, bceError := c.SendRequest(req, option, true)
 
 	return bceError
 }
@@ -144,7 +144,7 @@ func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (boo
 		return false, bce.NewError(err)
 	}
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if res != nil {
 		switch {
@@ -165,7 +165,7 @@ func (c *Client) DeleteBucket(bucketName string, option *bce.SignOption) *bce.Er
 		return bce.NewError(err)
 	}
 
-	_, bceError := c.SendRequest(req, option)
+	_, bceError := c.SendRequest(req, option, true)
 
 	return bceError
 }
@@ -190,7 +190,7 @@ func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*Bucke
 		return nil, bce.NewError(err)
 	}
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return nil, bceError
@@ -222,7 +222,7 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 		return bce.NewError(err)
 	}
 
-	_, bceError := c.SendRequest(req, option)
+	_, bceError := c.SendRequest(req, option, true)
 
 	return bceError
 }
@@ -261,7 +261,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 		metadata.MergeToSignOption(option)
 	}
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return nil, bceError
@@ -284,7 +284,7 @@ func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOpti
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
 
-	_, bceError := c.SendRequest(req, option)
+	_, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return bceError
@@ -303,7 +303,7 @@ func (c *Client) ListObjects(bucketName string, params map[string]string, option
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return nil, bceError
@@ -335,7 +335,7 @@ func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey strin
 	option.AddHeadersToSign("date")
 	option.AddHeader("x-bce-copy-source", fmt.Sprintf("/%s/%s", srcBucketName, srcKey))
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return nil, bceError
@@ -370,7 +370,7 @@ func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest, opt
 	option.AddHeader("x-bce-copy-source", source)
 	copyObjectRequest.MergeToSignOption(option)
 
-	res, bceError := c.SendRequest(req, option)
+	res, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
 		return nil, bceError
@@ -386,9 +386,34 @@ func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest, opt
 	return copyObjectResponse, nil
 }
 
-func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
+func (c *Client) GetObject(bucketName, objectKey string, option *bce.SignOption) (*Object, *bce.Error) {
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	req, err := bce.NewRequest("GET", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
+
+	res, bceError := c.SendRequest(req, option, false)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	object := &Object{
+		ObjectMetadata: NewObjectMetadataFromHeader(res.Header),
+		ObjectContent:  res.Response.Body,
+	}
+
+	return object, bceError
+}
+
+func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
@@ -396,9 +421,13 @@ func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.Sign
 		return bce.NewError(err)
 	}
 
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
 	headers := map[string]string{"x-bce-acl": acl}
 	req.AddHeaders(headers)
-	_, bceError := c.SendRequest(req, option)
+
+	_, bceError := c.SendRequest(req, option, true)
 
 	return bceError
 }

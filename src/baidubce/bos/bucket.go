@@ -1,6 +1,7 @@
 package bos
 
 import (
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -58,6 +59,38 @@ type ObjectMetadata struct {
 	ContentRange string
 	ETag         string
 	UserMetadata map[string]string
+}
+
+func NewObjectMetadataFromHeader(h http.Header) *ObjectMetadata {
+	objectMetadata := &ObjectMetadata{}
+
+	for key, _ := range h {
+		key = strings.ToLower(key)
+
+		if key == "cache-control" {
+			objectMetadata.CacheControl = h.Get(key)
+		} else if key == "content-disposition" {
+			objectMetadata.ContentDisposition = h.Get(key)
+		} else if key == "content-length" {
+			length, err := strconv.Atoi(h.Get(key))
+
+			if err == nil {
+				objectMetadata.ContentLength = length
+			}
+		} else if key == "content-range" {
+			objectMetadata.ContentRange = h.Get(key)
+		} else if key == "content-type" {
+			objectMetadata.ContentType = h.Get(key)
+		} else if key == "expires" {
+			objectMetadata.Expires = h.Get(key)
+		} else if key == "etag" {
+			objectMetadata.ETag = h.Get(key)
+		} else if IsUserDefinedMetadata(key) {
+			objectMetadata.UserMetadata[key] = h.Get(key)
+		}
+	}
+
+	return objectMetadata
 }
 
 func (metadata *ObjectMetadata) AddUserMetadata(key, value string) {
@@ -186,6 +219,11 @@ func (copyObjectRequest *CopyObjectRequest) MergeToSignOption(option *bce.SignOp
 	} else {
 		option.AddHeader("x-bce-metadata-directive", "copy")
 	}
+}
+
+type Object struct {
+	ObjectMetadata *ObjectMetadata
+	ObjectContent  io.ReadCloser
 }
 
 var UserDefinedMetadataPrefix = "x-bce-meta-"

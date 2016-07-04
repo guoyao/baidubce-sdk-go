@@ -209,22 +209,20 @@ func (c *Client) GetUriPath(uriPath string) string {
 }
 
 // SendRequest sends a http request to the endpoint of baidubce api.
-func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Error) {
+func (c *Client) SendRequest(req *Request, option *SignOption, autoReadAllBytesFromResponseBody bool) (*Response, *Error) {
 	GenerateAuthorization(c.Credentials, *req, option)
 	httpClient := http.Client{}
 	res, err := httpClient.Do(req.raw())
-
-	defer func() {
-		if res != nil {
-			res.Body.Close()
-		}
-	}()
 
 	if err != nil {
 		return nil, NewError(err)
 	}
 
-	bceResponse := NewResponse(res)
+	bceResponse, err := NewResponse(res, autoReadAllBytesFromResponseBody)
+
+	if err != nil {
+		return nil, NewError(err)
+	}
 
 	if res.StatusCode >= 400 {
 		return bceResponse, NewErrorFromJSON(bceResponse.Body)

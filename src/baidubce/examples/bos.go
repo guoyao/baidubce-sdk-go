@@ -302,12 +302,37 @@ func copyObjectFromRequest() {
 	} else {
 		fmt.Println(copyObjectResponse.ETag, copyObjectResponse.LastModified)
 	}
+}
 
+func getObject() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "baidubce-sdk-go-test.pdf"
+
+	object, bceError := bosClient.GetObject(bucketName, objectKey, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		fmt.Println(object.ObjectMetadata)
+
+		byteArray, err := ioutil.ReadAll(object.ObjectContent)
+
+		if err != nil {
+			log.Println(err)
+		} else {
+			err = ioutil.WriteFile(objectKey, byteArray, 0666)
+
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
 }
 
 func main() {
-	copyObjectFromRequest()
+	getObject()
 	return
+	copyObjectFromRequest()
 	copyObject()
 	deleteObject()
 	listObjects()
