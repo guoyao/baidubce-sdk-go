@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	bce "baidubce"
@@ -412,7 +413,7 @@ func (c *Client) GetObject(bucketName, objectKey string, option *bce.SignOption)
 		ObjectContent:  res.Response.Body,
 	}
 
-	return object, bceError
+	return object, nil
 }
 
 func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest, option *bce.SignOption) (*Object, *bce.Error) {
@@ -447,9 +448,52 @@ func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest, option
 		ObjectContent:  res.Response.Body,
 	}
 
-	return object, bceError
+	return object, nil
 }
 
+func (c *Client) GetObjectToFile(getObjectRequest *GetObjectRequest, file *os.File, option *bce.SignOption) (*ObjectMetadata, *bce.Error) {
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+
+	checkBucketName(getObjectRequest.BucketName)
+	checkObjectKey(getObjectRequest.ObjectKey)
+
+	req, err := bce.NewRequest(
+		"GET",
+		c.GetUriPath(getObjectRequest.ObjectKey),
+		c.GetBucketEndpoint(getObjectRequest.BucketName),
+		nil,
+		nil,
+	)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	getObjectRequest.MergeToSignOption(option)
+
+	res, bceError := c.SendRequest(req, option, true)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	objectMetadata := NewObjectMetadataFromHeader(res.Header)
+
+	_, err = file.Write(res.Body)
+
+	if err != nil {
+		return objectMetadata, bce.NewError(err)
+	}
+
+	return objectMetadata, nil
+}
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)

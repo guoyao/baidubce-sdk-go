@@ -2,11 +2,13 @@ package bos
 
 import (
 	"io/ioutil"
+	"os"
 	"strconv"
 	"testing"
 	"time"
 
 	"baidubce/test"
+	"baidubce/util"
 )
 
 var bosClient = DefaultClient
@@ -335,6 +337,50 @@ func TestGetObjectFromRequest(t *testing.T) {
 		}
 	})
 }
+
+func TestGetObjectToFile(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-get-object-to-file-"
+	method := "GetObjectToFile"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else {
+			getObjectRequest := &GetObjectRequest{
+				BucketName: bucketName,
+				ObjectKey:  objectKey,
+			}
+			getObjectRequest.SetRange(0, 1000)
+
+			file, err := os.OpenFile(objectKey, os.O_WRONLY|os.O_CREATE, 0666)
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else {
+				objectMetadata, err := bosClient.GetObjectToFile(getObjectRequest, file, nil)
+
+				if err != nil {
+					t.Error(test.Format(method, err.Error(), "nil"))
+				} else if objectMetadata.ETag == "" {
+					t.Error(test.Format(method, "etag is empty", "non empty etag"))
+				} else if !util.CheckFileExists(objectKey) {
+					t.Error(test.Format(method, "file is not saved to local", "file saved to local"))
+				} else {
+					err := os.Remove(objectKey)
+
+					if err != nil {
+						t.Error(test.Format(method, err.Error(), "nil"))
+					}
+				}
+			}
+		}
+	})
+}
+
 func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)

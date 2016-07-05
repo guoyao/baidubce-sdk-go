@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -280,4 +281,14 @@ func ToJson(i interface{}, keys ...string) ([]byte, error) {
 	}
 
 	return byteArray, err
+}
+
+func CheckFileExists(filename string) bool {
+	exist := true
+
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		exist = false
+	}
+
+	return exist
 }

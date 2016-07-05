@@ -360,9 +360,35 @@ func getObjectFromRequest() {
 	}
 }
 
+func getObjectToFile() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "baidubce-sdk-go-test.pdf"
+
+	getObjectRequest := &bos.GetObjectRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+	}
+	getObjectRequest.SetRange(0, 1000)
+
+	file, err := os.OpenFile(objectKey, os.O_WRONLY|os.O_CREATE, 0666)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		objectMetadata, bceError := bosClient.GetObjectToFile(getObjectRequest, file, nil)
+
+		if bceError != nil {
+			log.Println(bceError)
+		} else {
+			fmt.Println(objectMetadata)
+		}
+	}
+}
+
 func main() {
-	getObjectFromRequest()
+	getObjectToFile()
 	return
+	getObjectFromRequest()
 	getObject()
 	copyObjectFromRequest()
 	copyObject()
