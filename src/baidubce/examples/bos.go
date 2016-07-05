@@ -415,9 +415,31 @@ func generatePresignedUrl() {
 	}
 }
 
+func appendObject() {
+	bucketName := "baidubce-sdk-go"
+
+	objectKey := "append-object-from-string.txt"
+	str := "Hello World 你好"
+	offset := 0
+
+	option := new(bce.SignOption)
+	metadata := new(bos.ObjectMetadata)
+	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
+
+	appendObjectResponse, bceError := bosClient.AppendObject(bucketName, objectKey, offset, str, metadata, option)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		fmt.Println(appendObjectResponse.GetETag(), appendObjectResponse.GetMD5(),
+			appendObjectResponse.GetNextAppendOffset())
+	}
+}
+
 func main() {
-	generatePresignedUrl()
+	appendObject()
 	return
+	generatePresignedUrl()
 	getObjectMetadata()
 	getObjectToFile()
 	getObjectFromRequest()

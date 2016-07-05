@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	bce "baidubce"
@@ -522,6 +523,59 @@ func (c *Client) GeneratePresignedUrl(bucketName, objectKey string, option *bce.
 	return url, nil
 }
 
+func (c *Client) AppendObject(bucketName, objectKey string, offset int, data interface{},
+	metadata *ObjectMetadata, option *bce.SignOption) (AppendObjectResponse, *bce.Error) {
+
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	var reader io.Reader
+
+	if str, ok := data.(string); ok {
+		reader = strings.NewReader(str)
+	} else if byteArray, ok := data.([]byte); ok {
+		reader = bytes.NewReader(byteArray)
+	} else if r, ok := data.(io.Reader); ok {
+		byteArray, err := ioutil.ReadAll(r)
+
+		if err != nil {
+			return nil, bce.NewError(err)
+		}
+
+		reader = bytes.NewReader(byteArray)
+	} else {
+		panic("data type should be string or []byte or io.Reader.")
+	}
+
+	params := map[string]string{"append": ""}
+
+	if offset > 0 {
+		params["offset"] = strconv.Itoa(offset)
+	}
+
+	req, err := bce.NewRequest("POST", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), params, reader)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	if metadata != nil {
+		metadata.MergeToSignOption(option)
+	}
+
+	res, bceError := c.SendRequest(req, option, true)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	appendObjectResponse := NewAppendObjectResponse(res.Header)
+
+	return appendObjectResponse, nil
+}
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)

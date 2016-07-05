@@ -150,6 +150,28 @@ func (res PutObjectResponse) GetETag() string {
 	return res.Get("Etag")
 }
 
+type AppendObjectResponse http.Header
+
+func NewAppendObjectResponse(h http.Header) AppendObjectResponse {
+	return AppendObjectResponse(h)
+}
+
+func (res AppendObjectResponse) Get(key string) string {
+	return http.Header(res).Get(key)
+}
+
+func (res AppendObjectResponse) GetETag() string {
+	return res.Get("Etag")
+}
+
+func (res AppendObjectResponse) GetMD5() string {
+	return res.Get("Content-MD5")
+}
+
+func (res AppendObjectResponse) GetNextAppendOffset() string {
+	return res.Get("x-bce-next-append-offset")
+}
+
 type ObjectSummary struct {
 	Key          string
 	LastModified string

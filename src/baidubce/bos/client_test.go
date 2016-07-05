@@ -441,6 +441,47 @@ func TestGeneratePresignedUrl(t *testing.T) {
 		}
 	})
 }
+
+func TestAppendObject(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-append-object-"
+	method := "AppendObject"
+	objectKey := "append-object-from-string.txt"
+	str := "Hello World 你好"
+	offset := 0
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		appendObjectResponse, err := bosClient.AppendObject(bucketName, objectKey, offset, str, nil, nil)
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else if appendObjectResponse.GetETag() == "" || appendObjectResponse.GetNextAppendOffset() == "" {
+			t.Error(test.Format(method, "etag and next append offset are not exists", "etag and next append offset"))
+		} else {
+			length, err := strconv.Atoi(appendObjectResponse.GetNextAppendOffset())
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else {
+				offset = length
+				appendObjectResponse, err := bosClient.AppendObject(bucketName, objectKey, offset, str, nil, nil)
+
+				if err != nil {
+					t.Error(test.Format(method, err.Error(), "nil"))
+				} else if appendObjectResponse.GetETag() == "" || appendObjectResponse.GetNextAppendOffset() == "" {
+					t.Error(test.Format(method, "etag and next append offset are not exists", "etag and next append offset"))
+				} else {
+					length, err := strconv.Atoi(appendObjectResponse.GetNextAppendOffset())
+
+					if err != nil {
+						t.Error(test.Format(method, err.Error(), "nil"))
+					} else if length != offset*2 {
+						t.Error(test.Format(method, strconv.Itoa(length), strconv.Itoa(offset*2)))
+					}
+				}
+			}
+		}
+	})
+}
+
 func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
