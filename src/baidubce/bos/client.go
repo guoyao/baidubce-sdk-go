@@ -284,9 +284,6 @@ func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOpti
 		return bce.NewError(err)
 	}
 
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	_, bceError := c.SendRequest(req, option, true)
 
 	if bceError != nil {
@@ -302,9 +299,6 @@ func (c *Client) ListObjects(bucketName string, params map[string]string, option
 	if err != nil {
 		return nil, bce.NewError(err)
 	}
-
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 
 	res, bceError := c.SendRequest(req, option, true)
 
@@ -399,9 +393,6 @@ func (c *Client) GetObject(bucketName, objectKey string, option *bce.SignOption)
 		return nil, bce.NewError(err)
 	}
 
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	res, bceError := c.SendRequest(req, option, false)
 
 	if bceError != nil {
@@ -433,8 +424,6 @@ func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest, option
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	getObjectRequest.MergeToSignOption(option)
 
 	res, bceError := c.SendRequest(req, option, false)
@@ -474,8 +463,6 @@ func (c *Client) GetObjectToFile(getObjectRequest *GetObjectRequest, file *os.Fi
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	getObjectRequest.MergeToSignOption(option)
 
 	res, bceError := c.SendRequest(req, option, true)
@@ -514,6 +501,25 @@ func (c *Client) GetObjectMetadata(bucketName, objectKey string, option *bce.Sig
 	objectMetadata := NewObjectMetadataFromHeader(res.Header)
 
 	return objectMetadata, nil
+}
+
+func (c *Client) GeneratePresignedUrl(bucketName, objectKey string, option *bce.SignOption) (string, *bce.Error) {
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	req, err := bce.NewRequest("GET", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
+
+	if err != nil {
+		return "", bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("host")
+
+	authorization := bce.GenerateAuthorization(c.Credentials, *req, option)
+	url := fmt.Sprintf("%s?authorization=%s", req.URL.String(), util.URLEncode(authorization))
+
+	return url, nil
 }
 
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {

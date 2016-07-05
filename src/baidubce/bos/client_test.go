@@ -1,7 +1,9 @@
 package bos
 
 import (
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"testing"
@@ -404,6 +406,41 @@ func TestGetObjectMetadata(t *testing.T) {
 	})
 }
 
+func TestGeneratePresignedUrl(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-generate-presigned-url-"
+	method := "GeneratePresignedUrl"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else {
+			url, err := bosClient.GeneratePresignedUrl(bucketName, objectKey, nil)
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else {
+				req, err := http.NewRequest("GET", url, nil)
+
+				if err != nil {
+					t.Error(test.Format(method, err.Error(), "nil"))
+				} else {
+					httpClient := http.Client{}
+					res, err := httpClient.Do(req)
+
+					if err != nil {
+						t.Error(test.Format(method, err.Error(), "nil"))
+					} else if res.StatusCode != 200 {
+						t.Error(test.Format(method, fmt.Sprintf("status code: %v", res.StatusCode), "status code: 200"))
+					}
+				}
+			}
+		}
+	})
+}
 func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)

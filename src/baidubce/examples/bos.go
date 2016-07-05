@@ -398,9 +398,27 @@ func getObjectMetadata() {
 	}
 }
 
+func generatePresignedUrl() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "baidubce-sdk-go-test.pdf"
+
+	option := &bce.SignOption{
+		ExpirationPeriodInSeconds: 300,
+	}
+
+	url, bceError := bosClient.GeneratePresignedUrl(bucketName, objectKey, option)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		fmt.Println(url)
+	}
+}
+
 func main() {
-	getObjectMetadata()
+	generatePresignedUrl()
 	return
+	getObjectMetadata()
 	getObjectToFile()
 	getObjectFromRequest()
 	getObject()
