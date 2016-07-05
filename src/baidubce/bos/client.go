@@ -494,6 +494,28 @@ func (c *Client) GetObjectToFile(getObjectRequest *GetObjectRequest, file *os.Fi
 
 	return objectMetadata, nil
 }
+
+func (c *Client) GetObjectMetadata(bucketName, objectKey string, option *bce.SignOption) (*ObjectMetadata, *bce.Error) {
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	req, err := bce.NewRequest("HEAD", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	res, bceError := c.SendRequest(req, option, false)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	objectMetadata := NewObjectMetadataFromHeader(res.Header)
+
+	return objectMetadata, nil
+}
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)

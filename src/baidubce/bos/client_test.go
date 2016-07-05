@@ -381,6 +381,29 @@ func TestGetObjectToFile(t *testing.T) {
 	})
 }
 
+func TestGetObjectMetadata(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-get-object-metadata-"
+	method := "GetObjectMetadata"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else {
+			objectMetadata, err := bosClient.GetObjectMetadata(bucketName, objectKey, nil)
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else if objectMetadata.ETag == "" {
+				t.Error(test.Format(method, "etag is empty", "non empty etag"))
+			}
+		}
+	})
+}
+
 func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
