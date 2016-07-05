@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -171,6 +172,15 @@ func TestToJson(t *testing.T) {
 		if result != expected {
 			t.Error(test.Format("ToMap", result, expected))
 		}
+	}
+}
+
+func TestCheckFileExists(t *testing.T) {
+	expected := true
+	result := CheckFileExists("util_test.go")
+
+	if result != expected {
+		t.Error(test.Format("CheckFileExists", strconv.FormatBool(result), strconv.FormatBool(expected)))
 	}
 }
 
