@@ -124,13 +124,14 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error
 
 // CreateBucket is for creating a bucket.
 func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Error {
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
 
 	if err != nil {
 		return bce.NewError(err)
 	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
 
 	_, bceError := c.SendRequest(req, option, true)
 
@@ -207,8 +208,6 @@ func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*Bucke
 }
 
 func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bce.SignOption) *bce.Error {
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 	byteArray, err := util.ToJson(bucketAcl, "accessControlList")
 
 	if err != nil {
@@ -221,6 +220,9 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 	if err != nil {
 		return bce.NewError(err)
 	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
 
 	_, bceError := c.SendRequest(req, option, true)
 
@@ -425,7 +427,7 @@ func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.Sign
 	option.AddHeadersToSign("date")
 
 	headers := map[string]string{"x-bce-acl": acl}
-	req.AddHeaders(headers)
+	option.AddHeaders(headers)
 
 	_, bceError := c.SendRequest(req, option, true)
 
