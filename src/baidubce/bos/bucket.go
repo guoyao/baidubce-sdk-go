@@ -1,6 +1,7 @@
 package bos
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -224,6 +225,22 @@ func (copyObjectRequest *CopyObjectRequest) MergeToSignOption(option *bce.SignOp
 type Object struct {
 	ObjectMetadata *ObjectMetadata
 	ObjectContent  io.ReadCloser
+}
+
+type GetObjectRequest struct {
+	BucketName string
+	ObjectKey  string
+	Range      string
+}
+
+func (getObjectRequest *GetObjectRequest) MergeToSignOption(option *bce.SignOption) {
+	if getObjectRequest.Range != "" {
+		option.AddHeader("Range", "bytes="+getObjectRequest.Range)
+	}
+}
+
+func (getObjectRequest *GetObjectRequest) SetRange(start uint, end uint) {
+	getObjectRequest.Range = fmt.Sprintf("%v-%v", start, end)
 }
 
 var UserDefinedMetadataPrefix = "x-bce-meta-"

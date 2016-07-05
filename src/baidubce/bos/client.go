@@ -415,6 +415,41 @@ func (c *Client) GetObject(bucketName, objectKey string, option *bce.SignOption)
 	return object, bceError
 }
 
+func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest, option *bce.SignOption) (*Object, *bce.Error) {
+	checkBucketName(getObjectRequest.BucketName)
+	checkObjectKey(getObjectRequest.ObjectKey)
+
+	req, err := bce.NewRequest(
+		"GET",
+		c.GetUriPath(getObjectRequest.ObjectKey),
+		c.GetBucketEndpoint(getObjectRequest.BucketName),
+		nil,
+		nil,
+	)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	getObjectRequest.MergeToSignOption(option)
+
+	res, bceError := c.SendRequest(req, option, false)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	object := &Object{
+		ObjectMetadata: NewObjectMetadataFromHeader(res.Header),
+		ObjectContent:  res.Response.Body,
+	}
+
+	return object, bceError
+}
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)

@@ -300,6 +300,41 @@ func TestGetObject(t *testing.T) {
 	})
 }
 
+func TestGetObjectFromRequest(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-get-object-from-request-"
+	method := "GetObjectFromRequest"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+		} else {
+			getObjectRequest := &GetObjectRequest{
+				BucketName: bucketName,
+				ObjectKey:  objectKey,
+			}
+			getObjectRequest.SetRange(0, 1000)
+			object, err := bosClient.GetObjectFromRequest(getObjectRequest, nil)
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			} else if object.ObjectMetadata.ETag == "" {
+				t.Error(test.Format(method, "etag is empty", "non empty etag"))
+			} else {
+				byteArray, err := ioutil.ReadAll(object.ObjectContent)
+
+				if err != nil {
+					t.Error(test.Format(method, err.Error(), "nil"))
+				} else if len(byteArray) == 0 {
+					t.Error(test.Format(method, "body is empty", "non empty body"))
+				}
+			}
+		}
+	})
+}
 func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
