@@ -144,7 +144,10 @@ func (option *SignOption) init() {
 		option.HeadersToSign = append(option.HeadersToSign, "host")
 	}
 
-	if util.Contains(option.HeadersToSign, "date", true) {
+	if !option.headersToSignSpecified {
+		option.HeadersToSign = append(option.HeadersToSign, "x-bce-date")
+		option.Headers["x-bce-date"] = option.Timestamp
+	} else if util.Contains(option.HeadersToSign, "date", true) {
 		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("date")) {
 			option.Headers["date"] = time.Now().Format(time.RFC1123)
 		} else {
@@ -154,9 +157,6 @@ func (option *SignOption) init() {
 		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("x-bce-date")) {
 			option.Headers["x-bce-date"] = option.Timestamp
 		}
-	} else {
-		option.HeadersToSign = append(option.HeadersToSign, "x-bce-date")
-		option.Headers["x-bce-date"] = option.Timestamp
 	}
 }
 
