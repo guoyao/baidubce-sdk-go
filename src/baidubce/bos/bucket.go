@@ -265,6 +265,22 @@ func (getObjectRequest *GetObjectRequest) SetRange(start uint, end uint) {
 	getObjectRequest.Range = fmt.Sprintf("%v-%v", start, end)
 }
 
+type DeleteMultipleObjectsResponse struct {
+	Errors []DeleteMultipleObjectsError
+}
+
+type DeleteMultipleObjectsError struct {
+	Key, Code, Message string
+}
+
+func (deleteMultipleObjectsError *DeleteMultipleObjectsError) Error() string {
+	if deleteMultipleObjectsError.Message != "" {
+		return deleteMultipleObjectsError.Message
+	}
+
+	return deleteMultipleObjectsError.Code
+}
+
 var UserDefinedMetadataPrefix = "x-bce-meta-"
 
 var CannedAccessControlList = map[string]string{

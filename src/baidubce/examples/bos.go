@@ -9,6 +9,7 @@ import (
 
 	bce "baidubce"
 	"baidubce/bos"
+	//"baidubce/util"
 )
 
 var bosClient = bos.DefaultClient
@@ -234,6 +235,38 @@ func deleteObject() {
 	}
 }
 
+func deleteMultipleObjects() {
+	bucketName := "baidubce-sdk-go"
+
+	objects := []string{
+		"examples/delete-multiple-objects/put-object-from-string.txt",
+		"examples/delete-multiple-objects/put-object-from-string-2.txt",
+		"examples/delete-multiple-objects/put-object-from-string-3.txt",
+	}
+	str := "Hello World 你好"
+
+	for _, value := range objects {
+		putObjectResponse, bceError := bosClient.PutObject(bucketName, value, str, nil, nil)
+
+		if bceError != nil {
+			log.Fatal(bceError)
+		}
+		//util.CheckError(bceError)
+
+		fmt.Println(putObjectResponse.GetETag())
+	}
+
+	deleteMultipleObjectsResponse, bceError := bosClient.DeleteMultipleObjects(bucketName, objects, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else if deleteMultipleObjectsResponse != nil {
+		for _, deleteMultipleObjectsError := range deleteMultipleObjectsResponse.Errors {
+			log.Println(deleteMultipleObjectsError.Error())
+		}
+	}
+}
+
 func listObjects() {
 	bucketName := "baidubce-sdk-go"
 	params := map[string]string{
@@ -437,8 +470,9 @@ func appendObject() {
 }
 
 func main() {
-	appendObject()
+	deleteMultipleObjects()
 	return
+	appendObject()
 	generatePresignedUrl()
 	getObjectMetadata()
 	getObjectToFile()

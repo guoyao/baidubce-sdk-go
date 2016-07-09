@@ -165,6 +165,28 @@ func TestDeleteObject(t *testing.T) {
 	})
 }
 
+func TestDeleteMultipleObjects(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-delete-multiple-objects-"
+	method := "DeleteMultipleObjects"
+	str := "Hello World 你好"
+
+	objects := []string{
+		"examples/delete-multiple-objects/put-object-from-string.txt",
+		"examples/delete-multiple-objects/put-object-from-string-2.txt",
+		"examples/delete-multiple-objects/put-object-from-string-3.txt",
+	}
+
+	around(t, method, bucketNamePrefix, objects, func(bucketName string) {
+		for _, objectKey := range objects {
+			_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+			}
+		}
+	})
+}
+
 func TestListObjects(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-list-objects-"
 	method := "ListObjects"
@@ -482,7 +504,7 @@ func TestAppendObject(t *testing.T) {
 	})
 }
 
-func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(string)) {
+func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)
 
@@ -492,16 +514,37 @@ func around(t *testing.T, method, bucketNamePrefix, objectKey string, f func(str
 		if f != nil {
 			f(bucketName)
 
-			if objectKey != "" {
-				err = bosClient.DeleteObject(bucketName, objectKey, nil)
+			if key, ok := objectKey.(string); ok {
+				if key != "" {
+					err = bosClient.DeleteObject(bucketName, key, nil)
 
-				if err != nil {
-					t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+					if err != nil {
+						t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+					}
 				}
+			} else if keys, ok := objectKey.([]string); ok {
+				if len(keys) > 0 {
+					deleteMultipleObjectsResponse, err := bosClient.DeleteMultipleObjects(bucketName, keys, nil)
+
+					if err != nil {
+						t.Error(test.Format(method, err.Error(), "nil"))
+					} else if deleteMultipleObjectsResponse != nil {
+						str := ""
+
+						for _, deleteMultipleObjectsError := range deleteMultipleObjectsResponse.Errors {
+							str += deleteMultipleObjectsError.Error()
+						}
+
+						t.Error(test.Format(method, str, "empty string"))
+					}
+				}
+			} else {
+				t.Error(test.Format(method, "objectKey is not valid", "objectKey should be string or []string"))
 			}
 		}
 
 		err = bosClient.DeleteBucket(bucketName, nil)
+
 		if err != nil {
 			t.Error(test.Format(method+" at deleting bucket", err.Error(), "nil"))
 		}

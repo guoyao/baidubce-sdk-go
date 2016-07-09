@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"regexp"
@@ -30,6 +31,12 @@ import (
 	"strings"
 	"time"
 )
+
+func CheckError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 // GetURIPath returns the path part of URI.
 func GetURIPath(uri string) string {

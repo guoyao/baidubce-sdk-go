@@ -294,6 +294,56 @@ func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOpti
 	return nil
 }
 
+func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string, option *bce.SignOption) (*DeleteMultipleObjectsResponse, *bce.Error) {
+	checkBucketName(bucketName)
+
+	length := len(objectKeys)
+	objectMap := make(map[string][]map[string]string, 1)
+	objects := make([]map[string]string, length, length)
+
+	for index, value := range objectKeys {
+		objects[index] = map[string]string{"key": value}
+	}
+
+	objectMap["objects"] = objects
+	byteArray, err := util.ToJson(objectMap)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	params := map[string]string{"delete": ""}
+	body := bytes.NewReader(byteArray)
+
+	req, err := bce.NewRequest("POST", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, body)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	res, bceError := c.SendRequest(req, option, true)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	if len(res.Body) > 0 {
+		var deleteMultipleObjectsResponse *DeleteMultipleObjectsResponse
+		err := json.Unmarshal(res.Body, &deleteMultipleObjectsResponse)
+
+		if err != nil {
+			return nil, bce.NewError(err)
+		}
+
+		return deleteMultipleObjectsResponse, nil
+	}
+
+	return nil, nil
+}
+
 func (c *Client) ListObjects(bucketName string, params map[string]string, option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
 	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
@@ -576,6 +626,7 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 
 	return appendObjectResponse, nil
 }
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
