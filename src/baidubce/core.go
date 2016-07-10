@@ -163,6 +163,7 @@ func (option *SignOption) init() {
 func (option *SignOption) signedHeadersToString() string {
 	var result string
 	length := len(option.HeadersToSign)
+
 	if option.headersToSignSpecified && length > 0 {
 		headers := make([]string, 0, length)
 		headers = append(headers, option.HeadersToSign...)

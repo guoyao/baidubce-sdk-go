@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -260,6 +261,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
+	option.AddHeader("Content-Type", util.Guess(path.Ext(objectKey)))
 
 	if metadata != nil {
 		metadata.MergeToSignOption(option)
@@ -611,6 +613,7 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
+	option.AddHeader("Content-Type", util.Guess(path.Ext(objectKey)))
 
 	if metadata != nil {
 		metadata.MergeToSignOption(option)
@@ -625,6 +628,46 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 	appendObjectResponse := NewAppendObjectResponse(res.Header)
 
 	return appendObjectResponse, nil
+}
+
+func (c *Client) InitiateMultipartUpload(initiateMultipartUploadRequest InitiateMultipartUploadRequest,
+	option *bce.SignOption) (*InitiateMultipartUploadResponse, *bce.Error) {
+	bucketName := initiateMultipartUploadRequest.BucketName
+	objectKey := initiateMultipartUploadRequest.ObjectKey
+
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	params := map[string]string{"uploads": ""}
+
+	req, err := bce.NewRequest("POST", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), params, nil)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+	option.AddHeader("Content-Type", util.Guess(path.Ext(objectKey)))
+
+	if initiateMultipartUploadRequest.ObjectMetadata != nil {
+		initiateMultipartUploadRequest.ObjectMetadata.MergeToSignOption(option)
+	}
+
+	res, bceError := c.SendRequest(req, option, true)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	var initiateMultipartUploadResponse *InitiateMultipartUploadResponse
+	err = json.Unmarshal(res.Body, &initiateMultipartUploadResponse)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	return initiateMultipartUploadResponse, nil
 }
 
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {

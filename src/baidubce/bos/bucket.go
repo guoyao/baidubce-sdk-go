@@ -273,6 +273,15 @@ type DeleteMultipleObjectsError struct {
 	Key, Code, Message string
 }
 
+type InitiateMultipartUploadRequest struct {
+	BucketName, ObjectKey string
+	ObjectMetadata        *ObjectMetadata
+}
+
+type InitiateMultipartUploadResponse struct {
+	Bucket, Key, UploadId string
+}
+
 func (deleteMultipleObjectsError *DeleteMultipleObjectsError) Error() string {
 	if deleteMultipleObjectsError.Message != "" {
 		return deleteMultipleObjectsError.Message

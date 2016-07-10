@@ -469,8 +469,26 @@ func appendObject() {
 	}
 }
 
+func initiateMultipartUpload() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "multipart-upload-object-from-string.txt"
+
+	initiateMultipartUploadRequest := bos.InitiateMultipartUploadRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+	}
+
+	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		fmt.Println(initiateMultipartUploadResponse.UploadId)
+	}
+}
+
 func main() {
-	deleteMultipleObjects()
+	initiateMultipartUpload()
 	return
 	appendObject()
 	generatePresignedUrl()
@@ -481,6 +499,7 @@ func main() {
 	copyObjectFromRequest()
 	copyObject()
 	deleteObject()
+	deleteMultipleObjects()
 	listObjects()
 	putObject()
 	getBucketAcl()
