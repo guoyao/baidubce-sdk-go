@@ -12,6 +12,17 @@ import (
 	"baidubce/util"
 )
 
+const MIN_PART_NUMBER int = 1
+const MAX_PART_NUMBER int = 10000
+
+var UserDefinedMetadataPrefix = "x-bce-meta-"
+
+var CannedAccessControlList = map[string]string{
+	"Private":         "private",
+	"PublicRead":      "public-read",
+	"PublicReadWrite": "public-read-write",
+}
+
 // Location is a struct for bucket location info.
 type Location struct {
 	LocationConstraint string
@@ -147,7 +158,7 @@ func (res PutObjectResponse) Get(key string) string {
 }
 
 func (res PutObjectResponse) GetETag() string {
-	return res.Get("Etag")
+	return strings.Replace(res.Get("Etag"), "\"", "", -1)
 }
 
 type AppendObjectResponse http.Header
@@ -161,7 +172,7 @@ func (res AppendObjectResponse) Get(key string) string {
 }
 
 func (res AppendObjectResponse) GetETag() string {
-	return res.Get("Etag")
+	return strings.Replace(res.Get("Etag"), "\"", "", -1)
 }
 
 func (res AppendObjectResponse) GetMD5() string {
@@ -273,6 +284,14 @@ type DeleteMultipleObjectsError struct {
 	Key, Code, Message string
 }
 
+func (deleteMultipleObjectsError *DeleteMultipleObjectsError) Error() string {
+	if deleteMultipleObjectsError.Message != "" {
+		return deleteMultipleObjectsError.Message
+	}
+
+	return deleteMultipleObjectsError.Code
+}
+
 type InitiateMultipartUploadRequest struct {
 	BucketName, ObjectKey string
 	ObjectMetadata        *ObjectMetadata
@@ -282,20 +301,57 @@ type InitiateMultipartUploadResponse struct {
 	Bucket, Key, UploadId string
 }
 
-func (deleteMultipleObjectsError *DeleteMultipleObjectsError) Error() string {
-	if deleteMultipleObjectsError.Message != "" {
-		return deleteMultipleObjectsError.Message
-	}
-
-	return deleteMultipleObjectsError.Code
+type UploadPartRequest struct {
+	BucketName, ObjectKey, UploadId string
+	PartSize                        int64
+	PartNumber                      int
+	PartData                        []byte
 }
 
-var UserDefinedMetadataPrefix = "x-bce-meta-"
+type UploadPartResponse http.Header
 
-var CannedAccessControlList = map[string]string{
-	"Private":         "private",
-	"PublicRead":      "public-read",
-	"PublicReadWrite": "public-read-write",
+func NewUploadPartResponse(h http.Header) UploadPartResponse {
+	return UploadPartResponse(h)
+}
+
+func (res UploadPartResponse) Get(key string) string {
+	return http.Header(res).Get(key)
+}
+
+func (res UploadPartResponse) GetETag() string {
+	return strings.Replace(res.Get("Etag"), "\"", "", -1)
+}
+
+type PartETag struct {
+	PartNumber int    `json:"partNumber"`
+	ETag       string `json:"eTag"`
+}
+
+type PartETagSlice []PartETag
+
+func (partETagSlice PartETagSlice) Len() int {
+	return len(partETagSlice)
+}
+
+func (partETagSlice PartETagSlice) Swap(i, j int) {
+	partETagSlice[i], partETagSlice[j] = partETagSlice[j], partETagSlice[i]
+}
+
+func (partETagSlice PartETagSlice) Less(i, j int) bool {
+	return partETagSlice[i].PartNumber < partETagSlice[j].PartNumber
+}
+
+type CompleteMultipartUploadRequest struct {
+	BucketName, ObjectKey, UploadId string
+	Parts                           []PartETag `json:"parts"`
+}
+
+type CompleteMultipartUploadResponse struct {
+	Location, Bucket, Key, ETag string
+}
+
+type AbortMultipartUploadRequest struct {
+	BucketName, ObjectKey, UploadId string
 }
 
 func IsUserDefinedMetadata(metadata string) bool {

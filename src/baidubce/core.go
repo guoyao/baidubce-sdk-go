@@ -19,6 +19,7 @@ package baidubce
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
@@ -95,17 +96,25 @@ func CheckSignOption(option *SignOption) *SignOption {
 func (option *SignOption) AddHeadersToSign(headers ...string) {
 	if option.HeadersToSign == nil {
 		option.HeadersToSign = []string{}
+		option.HeadersToSign = append(option.HeadersToSign, headers...)
+	} else {
+		for _, header := range headers {
+			if !util.Contains(option.HeadersToSign, header, true) {
+				option.HeadersToSign = append(option.HeadersToSign, header)
+			}
+		}
 	}
-
-	option.HeadersToSign = append(option.HeadersToSign, headers...)
 }
 
 func (option *SignOption) AddHeader(key, value string) {
 	if option.Headers == nil {
 		option.Headers = make(map[string]string)
+		option.Headers[key] = value
 	}
 
-	option.Headers[key] = value
+	if !util.MapContains(option.Headers, generateHeaderValidCompareFunc(key)) {
+		option.Headers[key] = value
+	}
 }
 
 func (option *SignOption) AddHeaders(headers map[string]string) {
@@ -118,7 +127,7 @@ func (option *SignOption) AddHeaders(headers map[string]string) {
 	}
 
 	for key, value := range headers {
-		option.Headers[key] = value
+		option.AddHeader(key, value)
 	}
 }
 
@@ -226,6 +235,16 @@ func (c *Client) SendRequest(req *Request, option *SignOption, autoReadAllBytesF
 	}
 
 	if res.StatusCode >= 400 {
+		if bceResponse.Body == nil {
+			body, err := ioutil.ReadAll(bceResponse.Response.Body)
+
+			if err != nil {
+				return nil, NewError(err)
+			}
+
+			bceResponse.Body = body
+		}
+
 		return bceResponse, NewErrorFromJSON(bceResponse.Body)
 	}
 

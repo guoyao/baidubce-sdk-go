@@ -19,11 +19,14 @@ package util
 
 import (
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"regexp"
@@ -31,12 +34,6 @@ import (
 	"strings"
 	"time"
 )
-
-func CheckError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 // GetURIPath returns the path part of URI.
 func GetURIPath(uri string) string {
@@ -66,6 +63,39 @@ func HmacSha256Hex(key, message string) string {
 	mac := hmac.New(sha256.New, []byte(key))
 	mac.Write([]byte(message))
 	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func GetMD5(data interface{}, base64Encode bool) string {
+	var byteArray []byte
+
+	if str, ok := data.(string); ok {
+		byteArray = []byte(str)
+	} else if bs, ok := data.([]byte); ok {
+		byteArray = bs
+	} else if reader, ok := data.(io.Reader); ok {
+		bs, err := ioutil.ReadAll(reader)
+
+		if err != nil {
+			panic(err)
+		}
+
+		byteArray = bs
+	} else {
+		panic("data type should be string or []byte or io.Reader.")
+	}
+
+	hash := md5.New()
+	hash.Write(byteArray)
+
+	if base64Encode {
+		return Base64Encode(hash.Sum(nil))
+	}
+
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func Base64Encode(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
 }
 
 // Contains determines whether a string slice contains a certain value.

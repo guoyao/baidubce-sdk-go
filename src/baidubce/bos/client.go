@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"os"
-	"path"
 	"strconv"
 	"strings"
+	"sync"
 
 	bce "baidubce"
 	"baidubce/util"
@@ -232,7 +233,9 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 	return bceError
 }
 
-func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metadata *ObjectMetadata, option *bce.SignOption) (PutObjectResponse, *bce.Error) {
+func (c *Client) PutObject(bucketName, objectKey string, data interface{},
+	metadata *ObjectMetadata, option *bce.SignOption) (PutObjectResponse, *bce.Error) {
+
 	checkObjectKey(objectKey)
 
 	var reader io.Reader
@@ -261,7 +264,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{}, metad
 
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
-	option.AddHeader("Content-Type", util.Guess(path.Ext(objectKey)))
+	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if metadata != nil {
 		metadata.MergeToSignOption(option)
@@ -296,7 +299,9 @@ func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOpti
 	return nil
 }
 
-func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string, option *bce.SignOption) (*DeleteMultipleObjectsResponse, *bce.Error) {
+func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string,
+	option *bce.SignOption) (*DeleteMultipleObjectsResponse, *bce.Error) {
+
 	checkBucketName(bucketName)
 
 	length := len(objectKeys)
@@ -346,7 +351,9 @@ func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string, o
 	return nil, nil
 }
 
-func (c *Client) ListObjects(bucketName string, params map[string]string, option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
+func (c *Client) ListObjects(bucketName string, params map[string]string,
+	option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
+
 	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
 	if err != nil {
@@ -369,7 +376,9 @@ func (c *Client) ListObjects(bucketName string, params map[string]string, option
 	return listObjectsResponse, nil
 }
 
-func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey string, option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
+func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey string,
+	option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
+
 	checkBucketName(srcBucketName)
 	checkBucketName(destBucketName)
 	checkObjectKey(srcKey)
@@ -401,13 +410,16 @@ func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey strin
 	return copyObjectResponse, nil
 }
 
-func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest, option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
+func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest,
+	option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
+
 	checkBucketName(copyObjectRequest.SrcBucketName)
 	checkBucketName(copyObjectRequest.DestBucketName)
 	checkObjectKey(copyObjectRequest.SrcKey)
 	checkObjectKey(copyObjectRequest.DestKey)
 
-	req, err := bce.NewRequest("PUT", c.GetUriPath(copyObjectRequest.DestKey), c.GetBucketEndpoint(copyObjectRequest.DestBucketName), nil, nil)
+	req, err := bce.NewRequest("PUT", c.GetUriPath(copyObjectRequest.DestKey),
+		c.GetBucketEndpoint(copyObjectRequest.DestBucketName), nil, nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -416,7 +428,9 @@ func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest, opt
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
 
-	source := util.URIEncodeExceptSlash(fmt.Sprintf("/%s/%s", copyObjectRequest.SrcBucketName, copyObjectRequest.SrcKey))
+	source := util.URIEncodeExceptSlash(fmt.Sprintf("/%s/%s", copyObjectRequest.SrcBucketName,
+		copyObjectRequest.SrcKey))
+
 	option.AddHeader("x-bce-copy-source", source)
 	copyObjectRequest.MergeToSignOption(option)
 
@@ -460,7 +474,9 @@ func (c *Client) GetObject(bucketName, objectKey string, option *bce.SignOption)
 	return object, nil
 }
 
-func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest, option *bce.SignOption) (*Object, *bce.Error) {
+func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest,
+	option *bce.SignOption) (*Object, *bce.Error) {
+
 	checkBucketName(getObjectRequest.BucketName)
 	checkObjectKey(getObjectRequest.ObjectKey)
 
@@ -493,7 +509,9 @@ func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest, option
 	return object, nil
 }
 
-func (c *Client) GetObjectToFile(getObjectRequest *GetObjectRequest, file *os.File, option *bce.SignOption) (*ObjectMetadata, *bce.Error) {
+func (c *Client) GetObjectToFile(getObjectRequest *GetObjectRequest, file *os.File,
+	option *bce.SignOption) (*ObjectMetadata, *bce.Error) {
+
 	defer func() {
 		if file != nil {
 			file.Close()
@@ -613,7 +631,7 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
-	option.AddHeader("Content-Type", util.Guess(path.Ext(objectKey)))
+	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if metadata != nil {
 		metadata.MergeToSignOption(option)
@@ -632,6 +650,7 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 
 func (c *Client) InitiateMultipartUpload(initiateMultipartUploadRequest InitiateMultipartUploadRequest,
 	option *bce.SignOption) (*InitiateMultipartUploadResponse, *bce.Error) {
+
 	bucketName := initiateMultipartUploadRequest.BucketName
 	objectKey := initiateMultipartUploadRequest.ObjectKey
 
@@ -648,7 +667,7 @@ func (c *Client) InitiateMultipartUpload(initiateMultipartUploadRequest Initiate
 
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
-	option.AddHeader("Content-Type", util.Guess(path.Ext(objectKey)))
+	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if initiateMultipartUploadRequest.ObjectMetadata != nil {
 		initiateMultipartUploadRequest.ObjectMetadata.MergeToSignOption(option)
@@ -668,6 +687,228 @@ func (c *Client) InitiateMultipartUpload(initiateMultipartUploadRequest Initiate
 	}
 
 	return initiateMultipartUploadResponse, nil
+}
+
+func (c *Client) UploadPart(uploadPartRequest UploadPartRequest,
+	option *bce.SignOption) (UploadPartResponse, *bce.Error) {
+
+	bucketName := uploadPartRequest.BucketName
+	objectKey := uploadPartRequest.ObjectKey
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	if uploadPartRequest.PartNumber < MIN_PART_NUMBER || uploadPartRequest.PartNumber > MAX_PART_NUMBER {
+		panic(fmt.Sprintf("Invalid partNumber %d. The valid range is from %d to %d.",
+			uploadPartRequest.PartNumber, MIN_PART_NUMBER, MAX_PART_NUMBER))
+	}
+
+	if uploadPartRequest.PartSize > 1024*1024*1024*5 {
+		panic(fmt.Sprintf("PartNumber %d: Part Size should not be more than 5GB.", uploadPartRequest.PartSize))
+	}
+
+	params := map[string]string{
+		"partNumber": strconv.Itoa(uploadPartRequest.PartNumber),
+		"uploadId":   uploadPartRequest.UploadId,
+	}
+
+	req, err := bce.NewRequest("PUT", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName),
+		params, bytes.NewReader(uploadPartRequest.PartData))
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+	option.AddHeaders(map[string]string{
+		"Content-Length": strconv.FormatInt(uploadPartRequest.PartSize, 10),
+		"Content-Type":   "application/octet-stream",
+	})
+
+	if _, ok := option.Headers["Content-MD5"]; !ok {
+		option.AddHeader("Content-MD5", util.GetMD5(uploadPartRequest.PartData, true))
+	}
+
+	res, bceError := c.SendRequest(req, option, false)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	uploadPartResponse := NewUploadPartResponse(res.Header)
+
+	return uploadPartResponse, nil
+}
+
+func (c *Client) CompleteMultipartUpload(completeMultipartUploadRequest CompleteMultipartUploadRequest,
+	option *bce.SignOption) (*CompleteMultipartUploadResponse, *bce.Error) {
+
+	bucketName := completeMultipartUploadRequest.BucketName
+	objectKey := completeMultipartUploadRequest.ObjectKey
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	params := map[string]string{"uploadId": completeMultipartUploadRequest.UploadId}
+	byteArray, err := util.ToJson(completeMultipartUploadRequest, "parts")
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	req, err := bce.NewRequest("POST", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName),
+		params, bytes.NewReader(byteArray))
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+	res, bceError := c.SendRequest(req, option, true)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	var completeMultipartUploadResponse *CompleteMultipartUploadResponse
+
+	err = json.Unmarshal(res.Body, &completeMultipartUploadResponse)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	return completeMultipartUploadResponse, nil
+}
+
+func (c *Client) MultipartUploadFromFile(bucketName, objectKey, filePath string,
+	partSize int64) (*CompleteMultipartUploadResponse, *bce.Error) {
+
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	initiateMultipartUploadRequest := InitiateMultipartUploadRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+	}
+
+	initiateMultipartUploadResponse, bceError := c.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	uploadId := initiateMultipartUploadResponse.UploadId
+
+	file, err := os.Open(filePath)
+	defer file.Close()
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	fileInfo, err := file.Stat()
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	var totalSize int64 = fileInfo.Size()
+	var partCount int = int(math.Ceil(float64(totalSize) / float64(partSize)))
+
+	partETags := make([]PartETag, 0, partCount)
+
+	var waitGroup sync.WaitGroup
+
+	for i := 0; i < partCount; i++ {
+		var skipBytes int64 = partSize * int64(i)
+		var size int64 = int64(math.Min(float64(totalSize-skipBytes), float64(partSize)))
+
+		byteArray := make([]byte, size, size)
+		_, err := file.Read(byteArray)
+
+		if err != nil {
+			return nil, bce.NewError(err)
+		}
+
+		partNumber := i + 1
+
+		uploadPartRequest := UploadPartRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+			UploadId:   uploadId,
+			PartSize:   size,
+			PartNumber: partNumber,
+			PartData:   byteArray,
+		}
+
+		waitGroup.Add(1)
+
+		partETags = append(partETags, PartETag{PartNumber: partNumber})
+
+		go func(partNumber int) {
+			defer waitGroup.Done()
+
+			uploadPartResponse, err := c.UploadPart(uploadPartRequest, nil)
+
+			if err != nil {
+				panic(err)
+			}
+
+			partETags[partNumber-1].ETag = uploadPartResponse.GetETag()
+		}(partNumber)
+	}
+
+	waitGroup.Wait()
+	waitGroup.Add(1)
+
+	var completeMultipartUploadResponse *CompleteMultipartUploadResponse
+
+	go func() {
+		defer waitGroup.Done()
+
+		completeMultipartUploadRequest := CompleteMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+			UploadId:   uploadId,
+			Parts:      partETags,
+		}
+
+		completeResponse, err := c.CompleteMultipartUpload(completeMultipartUploadRequest, nil)
+
+		if err != nil {
+			panic(err)
+		}
+
+		completeMultipartUploadResponse = completeResponse
+	}()
+
+	waitGroup.Wait()
+
+	return completeMultipartUploadResponse, nil
+}
+
+func (c *Client) AbortMultipartUpload(abortMultipartUploadRequest AbortMultipartUploadRequest,
+	option *bce.SignOption) *bce.Error {
+
+	bucketName := abortMultipartUploadRequest.BucketName
+	objectKey := abortMultipartUploadRequest.ObjectKey
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	params := map[string]string{"uploadId": abortMultipartUploadRequest.UploadId}
+
+	req, err := bce.NewRequest("DELETE", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), params, nil)
+
+	if err != nil {
+		return bce.NewError(err)
+	}
+
+	//option = bce.CheckSignOption(option)
+	//option.AddHeadersToSign("date")
+	_, bceError := c.SendRequest(req, option, false)
+
+	return bceError
 }
 
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {

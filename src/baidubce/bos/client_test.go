@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"testing"
 	"time"
@@ -500,6 +501,66 @@ func TestAppendObject(t *testing.T) {
 					}
 				}
 			}
+		}
+	})
+}
+
+func TestMultipartUploadFromFile(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-multipart-upload-from-file-"
+	method := "MultipartUploadFromFile"
+	objectKey := "test-multipart-upload.zip"
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		pwd, err := os.Getwd()
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
+		}
+
+		filePath := path.Join(pwd, "../", "examples", "test-multipart-upload.zip")
+		var partSize int64 = 1024 * 1024 * 2
+
+		completeMultipartUploadResponse, bceError := bosClient.MultipartUploadFromFile(bucketName,
+			objectKey, filePath, partSize)
+
+		if bceError != nil {
+			t.Error(test.Format(method, bceError.Error(), "nil"))
+		} else if completeMultipartUploadResponse.ETag == "" {
+			t.Error(test.Format(method, "etag is not exists", "etag"))
+		}
+	})
+}
+
+func TestAbortMultipartUpload(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-abort-multipart-upload-"
+	method := "AbortMultipartUpload"
+	objectKey := "test-multipart-upload.zip"
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		initiateMultipartUploadRequest := InitiateMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+		}
+
+		initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
+		}
+
+		uploadId := initiateMultipartUploadResponse.UploadId
+
+		abortMultipartUploadRequest := AbortMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+			UploadId:   uploadId,
+		}
+
+		err = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
 		}
 	})
 }

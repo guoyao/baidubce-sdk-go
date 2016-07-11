@@ -15,6 +15,7 @@ const URI string = "http://bos.cn-n1.baidubce.com/v1/example/测试"
 func TestGetURIPath(t *testing.T) {
 	expected := "/v1/example/测试"
 	path := GetURIPath(URI)
+
 	if path != expected {
 		t.Error(test.Format("GetURIPath", path, expected))
 	}
@@ -24,8 +25,18 @@ func TestURIEncodeExceptSlash(t *testing.T) {
 	expected := "/v1/example/%E6%B5%8B%E8%AF%95"
 	path := GetURIPath(URI)
 	path = URIEncodeExceptSlash(path)
+
 	if path != expected {
 		t.Error(test.Format("URIEncodeExceptSlash", path, expected))
+	}
+}
+
+func TestGetMD5(t *testing.T) {
+	expected := "de22e061b93b832dd8af907ca9002fd7"
+	result := GetMD5("baidubce-sdk-go", false)
+
+	if result != expected {
+		t.Error(test.Format("GetMD5", result, expected))
 	}
 }
 
@@ -33,6 +44,7 @@ func TestTimeToUTCString(t *testing.T) {
 	expected := "2015-11-16T07:33:15Z"
 	datetime, _ := time.Parse(time.RFC1123, "Mon, 16 Nov 2015 15:33:15 CST")
 	utc := TimeToUTCString(datetime)
+
 	if utc != expected {
 		t.Error(test.Format("TimeToUTCString", utc, expected))
 	}
@@ -51,12 +63,14 @@ func TestHostToURL(t *testing.T) {
 	expected := "http://bj.bcebos.com"
 	host := "bj.bcebos.com"
 	url := HostToURL(host)
+
 	if url != expected {
 		t.Error(test.Format("HostToURL", url, expected))
 	}
 
 	host = "http://bj.bcebos.com"
 	url = HostToURL(host)
+
 	if url != expected {
 		t.Error(test.Format("HostToURL", url, expected))
 	}

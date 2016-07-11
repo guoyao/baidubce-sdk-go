@@ -18,6 +18,7 @@
 package util
 
 import (
+	"path"
 	"strings"
 )
 
@@ -1013,12 +1014,12 @@ var mimeTypes = map[string]string{
 	"ice":         "x-conference/x-cooltalk",
 }
 
-func Guess(ext string) string {
-	if strings.Index(ext, ".") == 0 {
+func GuessMimeType(s string) string {
+	ext := strings.ToLower(path.Ext(s))
+
+	if ext != "" && strings.Index(ext, ".") == 0 {
 		ext = ext[1:]
 	}
-
-	ext = strings.ToLower(ext)
 
 	if mimeType, ok := mimeTypes[ext]; ok {
 		return mimeType

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"path"
+	"sync"
 
 	bce "baidubce"
 	"baidubce/bos"
@@ -176,9 +178,9 @@ func putObject() {
 		log.Fatal(err)
 	}
 
-	filePath := path.Join(pwd, "baidubce", "examples", "baidubce-sdk-go-test.pdf")
+	filePath := path.Join(pwd, "baidubce", "examples", "test.tgz")
 
-	objectKey = "pdf/put-object-from-bytes.pdf"
+	objectKey = "compressed/put-object-from-bytes.tgz"
 	byteArray, err := ioutil.ReadFile(filePath)
 
 	if err != nil {
@@ -193,7 +195,7 @@ func putObject() {
 		}
 	}
 
-	objectKey = "pdf/put-object-from-file.pdf"
+	objectKey = "compressed/put-object-from-file.tgz"
 	file, err := os.Open(filePath)
 	defer file.Close()
 
@@ -270,10 +272,10 @@ func deleteMultipleObjects() {
 func listObjects() {
 	bucketName := "baidubce-sdk-go"
 	params := map[string]string{
-		//"prefix":    "pdf/",
+		//"prefix":    "compressed/",
 		"delimiter": "/",
 		"marker":    "",
-		//"marker":    "pdf/put-object-from-bytes.pdf",
+		//"marker":    "compressed/put-object-from-bytes.tgz",
 		"maxKeys": "1000",
 	}
 
@@ -294,9 +296,9 @@ func listObjects() {
 
 func copyObject() {
 	srcBucketName := "baidubce-sdk-go"
-	srcKey := "baidubce-sdk-go-test.pdf"
+	srcKey := "test.tgz"
 	destBucketName := "baidubce-sdk-go"
-	destKey := "pdf/baidubce-sdk-go-test-copy.pdf"
+	destKey := "compressed/test-copy.tgz"
 
 	copyObjectResponse, bceError := bosClient.CopyObject(srcBucketName, srcKey, destBucketName, destKey, nil)
 
@@ -312,9 +314,9 @@ func copyObjectFromRequest() {
 
 	copyObjectRequest := &bos.CopyObjectRequest{
 		SrcBucketName:  "baidubce-sdk-go",
-		SrcKey:         "baidubce-sdk-go-test.pdf",
+		SrcKey:         "test.tgz",
 		DestBucketName: "baidubce-sdk-go",
-		DestKey:        "pdf/baidubce-sdk-go-test-copy.pdf",
+		DestKey:        "compressed/test-copy.tgz",
 		//SourceMatch:    etag,
 		SourceNoneMatch: etag,
 		//SourceModifiedSince:   "2016-05-28T22:32:00Z",
@@ -339,7 +341,7 @@ func copyObjectFromRequest() {
 
 func getObject() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "baidubce-sdk-go-test.pdf"
+	objectKey := "test.tgz"
 
 	object, bceError := bosClient.GetObject(bucketName, objectKey, nil)
 
@@ -364,7 +366,7 @@ func getObject() {
 
 func getObjectFromRequest() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "baidubce-sdk-go-test.pdf"
+	objectKey := "test.tgz"
 
 	getObjectRequest := &bos.GetObjectRequest{
 		BucketName: bucketName,
@@ -395,7 +397,7 @@ func getObjectFromRequest() {
 
 func getObjectToFile() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "baidubce-sdk-go-test.pdf"
+	objectKey := "test.tgz"
 
 	getObjectRequest := &bos.GetObjectRequest{
 		BucketName: bucketName,
@@ -420,7 +422,7 @@ func getObjectToFile() {
 
 func getObjectMetadata() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "baidubce-sdk-go-test.pdf"
+	objectKey := "test.tgz"
 
 	objectMetadata, bceError := bosClient.GetObjectMetadata(bucketName, objectKey, nil)
 
@@ -433,7 +435,7 @@ func getObjectMetadata() {
 
 func generatePresignedUrl() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "baidubce-sdk-go-test.pdf"
+	objectKey := "test.tgz"
 
 	option := &bce.SignOption{
 		ExpirationPeriodInSeconds: 300,
@@ -469,9 +471,9 @@ func appendObject() {
 	}
 }
 
-func initiateMultipartUpload() {
+func multipartUpload() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "multipart-upload-object-from-string.txt"
+	objectKey := "test-multipart-upload.zip"
 
 	initiateMultipartUploadRequest := bos.InitiateMultipartUploadRequest{
 		BucketName: bucketName,
@@ -481,15 +483,162 @@ func initiateMultipartUpload() {
 	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
 	if bceError != nil {
+		panic(bceError)
+	}
+
+	uploadId := initiateMultipartUploadResponse.UploadId
+
+	pwd, err := os.Getwd()
+
+	if err != nil {
+		panic(err)
+	}
+
+	filePath := path.Join(pwd, "baidubce", "examples", objectKey)
+	file, err := os.Open(filePath)
+
+	defer file.Close()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fileInfo, err := file.Stat()
+
+	if err != nil {
+		panic(err)
+	}
+
+	var partSize int64 = 1024 * 1024 * 5
+	var totalSize int64 = fileInfo.Size()
+	var partCount int = int(math.Ceil(float64(totalSize) / float64(partSize)))
+
+	var waitGroup sync.WaitGroup
+	partETags := make([]bos.PartETag, 0, partCount)
+
+	for i := 0; i < partCount; i++ {
+		var skipBytes int64 = partSize * int64(i)
+		var size int64 = int64(math.Min(float64(totalSize-skipBytes), float64(partSize)))
+
+		byteArray := make([]byte, size, size)
+		_, err := file.Read(byteArray)
+
+		if err != nil {
+			panic(err)
+		}
+
+		partNumber := i + 1
+
+		uploadPartRequest := bos.UploadPartRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+			UploadId:   uploadId,
+			PartSize:   size,
+			PartNumber: partNumber,
+			PartData:   byteArray,
+		}
+
+		waitGroup.Add(1)
+
+		partETags = append(partETags, bos.PartETag{PartNumber: partNumber})
+
+		go func(partNumber int) {
+			defer waitGroup.Done()
+
+			uploadPartResponse, err := bosClient.UploadPart(uploadPartRequest, nil)
+
+			if err != nil {
+				panic(err)
+			}
+
+			partETags[partNumber-1].ETag = uploadPartResponse.GetETag()
+		}(partNumber)
+	}
+
+	waitGroup.Wait()
+	waitGroup.Add(1)
+
+	go func() {
+		defer waitGroup.Done()
+
+		completeMultipartUploadRequest := bos.CompleteMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+			UploadId:   uploadId,
+			Parts:      partETags,
+		}
+
+		completeMultipartUploadResponse, err := bosClient.CompleteMultipartUpload(
+			completeMultipartUploadRequest, nil)
+
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(completeMultipartUploadResponse.ETag)
+	}()
+
+	waitGroup.Wait()
+}
+
+func multipartUploadFromFile() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "test-multipart-upload-from-file.zip"
+
+	pwd, err := os.Getwd()
+
+	if err != nil {
+		panic(err)
+	}
+
+	filePath := path.Join(pwd, "baidubce", "examples", "test-multipart-upload.zip")
+	var partSize int64 = 1024 * 1024 * 2
+
+	completeMultipartUploadResponse, bceError := bosClient.MultipartUploadFromFile(bucketName,
+		objectKey, filePath, partSize)
+
+	if bceError != nil {
 		log.Println(bceError)
 	} else {
-		fmt.Println(initiateMultipartUploadResponse.UploadId)
+		fmt.Println(completeMultipartUploadResponse.ETag)
+	}
+}
+
+func abortMultipartUpload() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "test-multipart-upload.zip"
+
+	initiateMultipartUploadRequest := bos.InitiateMultipartUploadRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+	}
+
+	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+
+	if bceError != nil {
+		panic(bceError)
+	}
+
+	uploadId := initiateMultipartUploadResponse.UploadId
+
+	abortMultipartUploadRequest := bos.AbortMultipartUploadRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+		UploadId:   uploadId,
+	}
+
+	bceError = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
 	}
 }
 
 func main() {
-	initiateMultipartUpload()
+	abortMultipartUpload()
 	return
+	multipartUploadFromFile()
+	multipartUpload()
 	appendObject()
 	generatePresignedUrl()
 	getObjectMetadata()
