@@ -892,6 +892,58 @@ func (c *Client) AbortMultipartUpload(abortMultipartUploadRequest AbortMultipart
 	return bceError
 }
 
+func (c *Client) ListMultipartUploads(bucketName string,
+	option *bce.SignOption) (*ListMultipartUploadsResponse, *bce.Error) {
+
+	return c.ListMultipartUploadsFromRequest(ListMultipartUploadsRequest{BucketName: bucketName}, option)
+}
+
+func (c *Client) ListMultipartUploadsFromRequest(listMultipartUploadsRequest ListMultipartUploadsRequest,
+	option *bce.SignOption) (*ListMultipartUploadsResponse, *bce.Error) {
+
+	bucketName := listMultipartUploadsRequest.BucketName
+
+	params := map[string]string{"uploads": ""}
+
+	if listMultipartUploadsRequest.Delimiter != "" {
+		params["delimiter"] = listMultipartUploadsRequest.Delimiter
+	}
+
+	if listMultipartUploadsRequest.KeyMarker != "" {
+		params["keyMarker"] = listMultipartUploadsRequest.KeyMarker
+	}
+
+	if listMultipartUploadsRequest.Prefix != "" {
+		params["prefix"] = listMultipartUploadsRequest.Prefix
+	}
+
+	if listMultipartUploadsRequest.MaxUploads > 0 {
+		params["maxUploads"] = strconv.Itoa(listMultipartUploadsRequest.MaxUploads)
+	}
+
+	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	res, bceError := c.SendRequest(req, option, true)
+
+	if bceError != nil {
+		return nil, bceError
+	}
+
+	var listMultipartUploadsResponse *ListMultipartUploadsResponse
+
+	err = json.Unmarshal(res.Body, &listMultipartUploadsResponse)
+
+	if err != nil {
+		return nil, bce.NewError(err)
+	}
+
+	return listMultipartUploadsResponse, nil
+}
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)

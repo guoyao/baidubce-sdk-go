@@ -565,6 +565,54 @@ func TestAbortMultipartUpload(t *testing.T) {
 	})
 }
 
+func TestListMultipartUploads(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-list-multipart-uploads-"
+	objectKey := "test-multipart-upload.zip"
+	method := "ListMultipartUploads"
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		initiateMultipartUploadRequest := InitiateMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+		}
+
+		initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
+		}
+
+		defer func() {
+			if initiateMultipartUploadResponse != nil {
+				abortMultipartUploadRequest := AbortMultipartUploadRequest{
+					BucketName: bucketName,
+					ObjectKey:  objectKey,
+					UploadId:   initiateMultipartUploadResponse.UploadId,
+				}
+
+				err = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+
+				if err != nil {
+					t.Error(test.Format(method, err.Error(), "nil"))
+				}
+			}
+		}()
+
+		listMultipartUploadsResponse, err := bosClient.ListMultipartUploads(bucketName, nil)
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
+		}
+
+		partCount := len(listMultipartUploadsResponse.Uploads)
+
+		if partCount != 1 {
+			t.Error(test.Format(method, fmt.Sprintf("part count is %d", partCount), "part count should be 1"))
+		}
+	})
+}
+
 func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)

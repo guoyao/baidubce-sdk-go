@@ -359,6 +359,38 @@ type AbortMultipartUploadRequest struct {
 	BucketName, ObjectKey, UploadId string
 }
 
+type ListMultipartUploadsRequest struct {
+	BucketName, Delimiter, KeyMarker, Prefix string
+	MaxUploads                               int
+}
+
+type MultipartUploadSummary struct {
+	Key, UploadId string
+	Initiated     time.Time
+}
+
+type ListMultipartUploadsResponse struct {
+	Bucket         string
+	Prefix         string
+	Delimiter      string
+	KeyMarker      string
+	NextKeyMarker  string
+	MaxUploads     uint
+	IsTruncated    bool
+	Uploads        []MultipartUploadSummary
+	CommonPrefixes []map[string]string
+}
+
+func (listMultipartUploadsResponse *ListMultipartUploadsResponse) GetCommonPrefixes() []string {
+	prefixes := make([]string, 0, len(listMultipartUploadsResponse.CommonPrefixes))
+
+	for _, commonPrefix := range listMultipartUploadsResponse.CommonPrefixes {
+		prefixes = append(prefixes, commonPrefix["prefix"])
+	}
+
+	return prefixes
+}
+
 func IsUserDefinedMetadata(metadata string) bool {
 	return strings.Index(metadata, UserDefinedMetadataPrefix) == 0
 }

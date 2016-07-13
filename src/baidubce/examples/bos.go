@@ -651,9 +651,72 @@ func abortMultipartUpload() {
 	}
 }
 
+func listMultipartUploads() {
+	bucketName := "baidubce-sdk-go"
+	listMultipartUploadsResponse, err := bosClient.ListMultipartUploads(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for _, multipartUploadSummary := range listMultipartUploadsResponse.Uploads {
+		fmt.Println(multipartUploadSummary.Key, multipartUploadSummary.UploadId, multipartUploadSummary.Initiated)
+	}
+
+	for _, prefix := range listMultipartUploadsResponse.GetCommonPrefixes() {
+		fmt.Println(prefix)
+	}
+}
+
+func listMultipartUploadsFromRequest() {
+	/*
+		bucketName := "baidubce-sdk-go"
+		objectKey := "compressed/test-multipart-upload.zip"
+
+		initiateMultipartUploadRequest := bos.InitiateMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+		}
+
+		initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+
+		if bceError != nil {
+			log.Println(bceError)
+			log.Println(initiateMultipartUploadResponse.UploadId)
+			return
+		}
+	*/
+
+	listMultipartUploadsRequest := bos.ListMultipartUploadsRequest{
+		BucketName: "baidubce-sdk-go",
+		//Delimiter:  "/",
+		//KeyMarker:  "compressed/test-multipart-upload.zip",
+		//Prefix:     "compressed/",
+		MaxUploads: 100,
+	}
+
+	listMultipartUploadsResponse, err := bosClient.ListMultipartUploadsFromRequest(listMultipartUploadsRequest, nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for _, multipartUploadSummary := range listMultipartUploadsResponse.Uploads {
+		fmt.Println(multipartUploadSummary.Key, multipartUploadSummary.UploadId, multipartUploadSummary.Initiated)
+	}
+
+	for _, prefix := range listMultipartUploadsResponse.GetCommonPrefixes() {
+		fmt.Println(prefix)
+	}
+}
+
 func main() {
-	abortMultipartUpload()
+	listMultipartUploads()
 	return
+	listMultipartUploadsFromRequest()
+	abortMultipartUpload()
 	multipartUploadFromFile()
 	multipartUpload()
 	appendObject()
