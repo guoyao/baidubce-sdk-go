@@ -651,6 +651,46 @@ func abortMultipartUpload() {
 	}
 }
 
+func listParts() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "test-multipart-upload.zip"
+
+	listPartsResponse, err := bosClient.ListParts(bucketName, objectKey, "4b17efee1a6abfcdab1c856afdc070c2", nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for _, partSummary := range listPartsResponse.Parts {
+		fmt.Println(partSummary.PartNumber, partSummary.ETag, partSummary.Size, partSummary.LastModified)
+	}
+}
+
+func listPartsFromRequest() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "test-multipart-upload.zip"
+
+	listPartsRequest := bos.ListPartsRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+		UploadId:   "4b17efee1a6abfcdab1c856afdc070c2",
+		//PartNumberMarker: "1",
+		MaxParts: 1,
+	}
+
+	listPartsResponse, err := bosClient.ListPartsFromRequest(listPartsRequest, nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for _, partSummary := range listPartsResponse.Parts {
+		fmt.Println(partSummary.PartNumber, partSummary.ETag, partSummary.Size, partSummary.LastModified)
+	}
+}
+
 func listMultipartUploads() {
 	bucketName := "baidubce-sdk-go"
 	listMultipartUploadsResponse, err := bosClient.ListMultipartUploads(bucketName, nil)
@@ -713,8 +753,10 @@ func listMultipartUploadsFromRequest() {
 }
 
 func main() {
-	listMultipartUploads()
+	listParts()
 	return
+	listPartsFromRequest()
+	listMultipartUploads()
 	listMultipartUploadsFromRequest()
 	abortMultipartUpload()
 	multipartUploadFromFile()

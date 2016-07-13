@@ -367,6 +367,8 @@ type ListMultipartUploadsRequest struct {
 type MultipartUploadSummary struct {
 	Key, UploadId string
 	Initiated     time.Time
+	NextKeyMarker string
+	Owner         BucketOwner
 }
 
 type ListMultipartUploadsResponse struct {
@@ -375,7 +377,7 @@ type ListMultipartUploadsResponse struct {
 	Delimiter      string
 	KeyMarker      string
 	NextKeyMarker  string
-	MaxUploads     uint
+	MaxUploads     int
 	IsTruncated    bool
 	Uploads        []MultipartUploadSummary
 	CommonPrefixes []map[string]string
@@ -389,6 +391,31 @@ func (listMultipartUploadsResponse *ListMultipartUploadsResponse) GetCommonPrefi
 	}
 
 	return prefixes
+}
+
+type ListPartsRequest struct {
+	BucketName, ObjectKey, UploadId, PartNumberMarker string
+	MaxParts                                          int
+}
+
+type PartSummary struct {
+	PartNumber   int
+	LastModified time.Time
+	ETag         string
+	Size         int64
+}
+
+type ListPartsResponse struct {
+	Bucket               string
+	Key                  string
+	UploadId             string
+	Initiated            time.Time
+	partNumberMarker     string
+	nextPartNumberMarker string
+	MaxParts             int
+	IsTruncated          bool
+	Owner                BucketOwner
+	Parts                []PartSummary
 }
 
 func IsUserDefinedMetadata(metadata string) bool {

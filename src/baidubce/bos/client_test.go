@@ -3,10 +3,12 @@ package bos
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"path"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -509,6 +511,7 @@ func TestMultipartUploadFromFile(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-multipart-upload-from-file-"
 	method := "MultipartUploadFromFile"
 	objectKey := "test-multipart-upload.zip"
+
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
 		pwd, err := os.Getwd()
 
@@ -535,6 +538,7 @@ func TestAbortMultipartUpload(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-abort-multipart-upload-"
 	method := "AbortMultipartUpload"
 	objectKey := "test-multipart-upload.zip"
+
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		initiateMultipartUploadRequest := InitiateMultipartUploadRequest{
 			BucketName: bucketName,
@@ -569,6 +573,7 @@ func TestListMultipartUploads(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-list-multipart-uploads-"
 	objectKey := "test-multipart-upload.zip"
 	method := "ListMultipartUploads"
+
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		initiateMultipartUploadRequest := InitiateMultipartUploadRequest{
 			BucketName: bucketName,
@@ -609,6 +614,129 @@ func TestListMultipartUploads(t *testing.T) {
 
 		if partCount != 1 {
 			t.Error(test.Format(method, fmt.Sprintf("part count is %d", partCount), "part count should be 1"))
+		}
+	})
+}
+
+func TestListParts(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-list-parts-"
+	objectKey := "test-list-parts.zip"
+	method := "ListParts"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		initiateMultipartUploadRequest := InitiateMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  objectKey,
+		}
+
+		initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+
+		if bceError != nil {
+			t.Error(test.Format(method, bceError.Error(), "nil"))
+			return
+		}
+
+		defer func() {
+			if initiateMultipartUploadResponse != nil {
+				abortMultipartUploadRequest := AbortMultipartUploadRequest{
+					BucketName: bucketName,
+					ObjectKey:  objectKey,
+					UploadId:   initiateMultipartUploadResponse.UploadId,
+				}
+
+				bceError := bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+
+				if bceError != nil {
+					t.Error(test.Format(method, bceError.Error(), "nil"))
+				}
+			}
+		}()
+
+		pwd, err := os.Getwd()
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
+		}
+
+		filePath := path.Join(pwd, "../", "examples", "test-multipart-upload.zip")
+		file, err := os.Open(filePath)
+
+		defer file.Close()
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
+		}
+
+		fileInfo, err := file.Stat()
+
+		if err != nil {
+			t.Error(test.Format(method, err.Error(), "nil"))
+			return
+		}
+
+		var partSize int64 = 1024 * 1024 * 5
+		var totalSize int64 = fileInfo.Size()
+		var partCount int = int(math.Ceil(float64(totalSize) / float64(partSize)))
+
+		var waitGroup sync.WaitGroup
+		partETags := make([]PartETag, 0, partCount)
+
+		for i := 0; i < partCount; i++ {
+			var skipBytes int64 = partSize * int64(i)
+			var size int64 = int64(math.Min(float64(totalSize-skipBytes), float64(partSize)))
+
+			byteArray := make([]byte, size, size)
+			_, err := file.Read(byteArray)
+
+			if err != nil {
+				t.Error(test.Format(method, err.Error(), "nil"))
+				return
+			}
+
+			partNumber := i + 1
+
+			uploadPartRequest := UploadPartRequest{
+				BucketName: bucketName,
+				ObjectKey:  objectKey,
+				UploadId:   initiateMultipartUploadResponse.UploadId,
+				PartSize:   size,
+				PartNumber: partNumber,
+				PartData:   byteArray,
+			}
+
+			waitGroup.Add(1)
+
+			partETags = append(partETags, PartETag{PartNumber: partNumber})
+
+			go func(partNumber int) {
+				defer waitGroup.Done()
+
+				uploadPartResponse, bceError := bosClient.UploadPart(uploadPartRequest, nil)
+
+				if bceError != nil {
+					t.Error(test.Format(method, bceError.Error(), "nil"))
+					return
+				}
+
+				partETags[partNumber-1].ETag = uploadPartResponse.GetETag()
+			}(partNumber)
+		}
+
+		waitGroup.Wait()
+
+		listPartsResponse, bceError := bosClient.ListParts(bucketName, objectKey, initiateMultipartUploadResponse.UploadId, nil)
+
+		if bceError != nil {
+			t.Error(test.Format(method, bceError.Error(), "nil"))
+			return
+		}
+
+		partCount = len(listPartsResponse.Parts)
+
+		if partCount != 2 {
+			t.Error(test.Format(method, fmt.Sprintf("part count is %d", partCount), "part count should be 2"))
 		}
 	})
 }
