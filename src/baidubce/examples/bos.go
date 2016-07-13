@@ -271,15 +271,32 @@ func deleteMultipleObjects() {
 
 func listObjects() {
 	bucketName := "baidubce-sdk-go"
-	params := map[string]string{
-		//"prefix":    "compressed/",
-		"delimiter": "/",
-		"marker":    "",
-		//"marker":    "compressed/put-object-from-bytes.tgz",
-		"maxKeys": "1000",
+
+	listObjectsResponse, bceError := bosClient.ListObjects(bucketName, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+	} else {
+		for _, objectSummary := range listObjectsResponse.Contents {
+			fmt.Println(objectSummary.Key, objectSummary.ETag)
+		}
+
+		for _, prefix := range listObjectsResponse.GetCommonPrefixes() {
+			fmt.Println(prefix)
+		}
+	}
+}
+
+func listObjectsFromRequest() {
+	listObjectsRequest := bos.ListObjectsRequest{
+		BucketName: "baidubce-sdk-go",
+		Delimiter:  "/",
+		//Marker:    "compressed/put-object-from-bytes.tgz",
+		//Prefix:    "compressed/",
+		MaxKeys: 100,
 	}
 
-	listObjectsResponse, bceError := bosClient.ListObjects(bucketName, params, nil)
+	listObjectsResponse, bceError := bosClient.ListObjectsFromRequest(listObjectsRequest, nil)
 
 	if bceError != nil {
 		log.Println(bceError)
@@ -312,7 +329,7 @@ func copyObject() {
 func copyObjectFromRequest() {
 	etag := "fa412a6ca6d415208be69bc4a00f4103"
 
-	copyObjectRequest := &bos.CopyObjectRequest{
+	copyObjectRequest := bos.CopyObjectRequest{
 		SrcBucketName:  "baidubce-sdk-go",
 		SrcKey:         "test.tgz",
 		DestBucketName: "baidubce-sdk-go",
@@ -368,7 +385,7 @@ func getObjectFromRequest() {
 	bucketName := "baidubce-sdk-go"
 	objectKey := "test.tgz"
 
-	getObjectRequest := &bos.GetObjectRequest{
+	getObjectRequest := bos.GetObjectRequest{
 		BucketName: bucketName,
 		ObjectKey:  objectKey,
 	}
@@ -650,6 +667,7 @@ func main() {
 	deleteObject()
 	deleteMultipleObjects()
 	listObjects()
+	listObjectsFromRequest()
 	putObject()
 	getBucketAcl()
 	setBucketAcl()

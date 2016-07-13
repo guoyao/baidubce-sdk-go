@@ -267,7 +267,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{},
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if metadata != nil {
-		metadata.MergeToSignOption(option)
+		metadata.mergeToSignOption(option)
 	}
 
 	res, bceError := c.SendRequest(req, option, true)
@@ -351,8 +351,31 @@ func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string,
 	return nil, nil
 }
 
-func (c *Client) ListObjects(bucketName string, params map[string]string,
+func (c *Client) ListObjects(bucketName string, option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
+	return c.ListObjectsFromRequest(ListObjectsRequest{BucketName: bucketName}, option)
+}
+
+func (c *Client) ListObjectsFromRequest(listObjectsRequest ListObjectsRequest,
 	option *bce.SignOption) (*ListObjectsResponse, *bce.Error) {
+
+	bucketName := listObjectsRequest.BucketName
+	params := make(map[string]string)
+
+	if listObjectsRequest.Delimiter != "" {
+		params["delimiter"] = listObjectsRequest.Delimiter
+	}
+
+	if listObjectsRequest.Marker != "" {
+		params["marker"] = listObjectsRequest.Marker
+	}
+
+	if listObjectsRequest.Prefix != "" {
+		params["prefix"] = listObjectsRequest.Prefix
+	}
+
+	if listObjectsRequest.MaxKeys > 0 {
+		params["maxKeys"] = strconv.Itoa(listObjectsRequest.MaxKeys)
+	}
 
 	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
 
@@ -379,38 +402,15 @@ func (c *Client) ListObjects(bucketName string, params map[string]string,
 func (c *Client) CopyObject(srcBucketName, srcKey, destBucketName, destKey string,
 	option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
 
-	checkBucketName(srcBucketName)
-	checkBucketName(destBucketName)
-	checkObjectKey(srcKey)
-	checkObjectKey(destKey)
-
-	req, err := bce.NewRequest("PUT", c.GetUriPath(destKey), c.GetBucketEndpoint(destBucketName), nil, nil)
-
-	if err != nil {
-		return nil, bce.NewError(err)
-	}
-
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-	option.AddHeader("x-bce-copy-source", fmt.Sprintf("/%s/%s", srcBucketName, srcKey))
-
-	res, bceError := c.SendRequest(req, option, true)
-
-	if bceError != nil {
-		return nil, bceError
-	}
-
-	var copyObjectResponse *CopyObjectResponse
-	err = json.Unmarshal(res.Body, &copyObjectResponse)
-
-	if err != nil {
-		return nil, bce.NewError(err)
-	}
-
-	return copyObjectResponse, nil
+	return c.CopyObjectFromRequest(CopyObjectRequest{
+		SrcBucketName:  srcBucketName,
+		SrcKey:         srcKey,
+		DestBucketName: destBucketName,
+		DestKey:        destKey,
+	}, option)
 }
 
-func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest,
+func (c *Client) CopyObjectFromRequest(copyObjectRequest CopyObjectRequest,
 	option *bce.SignOption) (*CopyObjectResponse, *bce.Error) {
 
 	checkBucketName(copyObjectRequest.SrcBucketName)
@@ -432,7 +432,7 @@ func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest,
 		copyObjectRequest.SrcKey))
 
 	option.AddHeader("x-bce-copy-source", source)
-	copyObjectRequest.MergeToSignOption(option)
+	copyObjectRequest.mergeToSignOption(option)
 
 	res, bceError := c.SendRequest(req, option, true)
 
@@ -451,30 +451,13 @@ func (c *Client) CopyObjectFromRequest(copyObjectRequest *CopyObjectRequest,
 }
 
 func (c *Client) GetObject(bucketName, objectKey string, option *bce.SignOption) (*Object, *bce.Error) {
-	checkBucketName(bucketName)
-	checkObjectKey(objectKey)
-
-	req, err := bce.NewRequest("GET", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
-
-	if err != nil {
-		return nil, bce.NewError(err)
-	}
-
-	res, bceError := c.SendRequest(req, option, false)
-
-	if bceError != nil {
-		return nil, bceError
-	}
-
-	object := &Object{
-		ObjectMetadata: NewObjectMetadataFromHeader(res.Header),
-		ObjectContent:  res.Response.Body,
-	}
-
-	return object, nil
+	return c.GetObjectFromRequest(GetObjectRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+	}, option)
 }
 
-func (c *Client) GetObjectFromRequest(getObjectRequest *GetObjectRequest,
+func (c *Client) GetObjectFromRequest(getObjectRequest GetObjectRequest,
 	option *bce.SignOption) (*Object, *bce.Error) {
 
 	checkBucketName(getObjectRequest.BucketName)
@@ -634,7 +617,7 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if metadata != nil {
-		metadata.MergeToSignOption(option)
+		metadata.mergeToSignOption(option)
 	}
 
 	res, bceError := c.SendRequest(req, option, true)
@@ -670,7 +653,7 @@ func (c *Client) InitiateMultipartUpload(initiateMultipartUploadRequest Initiate
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if initiateMultipartUploadRequest.ObjectMetadata != nil {
-		initiateMultipartUploadRequest.ObjectMetadata.MergeToSignOption(option)
+		initiateMultipartUploadRequest.ObjectMetadata.mergeToSignOption(option)
 	}
 
 	res, bceError := c.SendRequest(req, option, true)
@@ -904,8 +887,6 @@ func (c *Client) AbortMultipartUpload(abortMultipartUploadRequest AbortMultipart
 		return bce.NewError(err)
 	}
 
-	//option = bce.CheckSignOption(option)
-	//option.AddHeadersToSign("date")
 	_, bceError := c.SendRequest(req, option, false)
 
 	return bceError

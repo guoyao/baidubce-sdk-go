@@ -96,7 +96,7 @@ func NewObjectMetadataFromHeader(h http.Header) *ObjectMetadata {
 		} else if key == "expires" {
 			objectMetadata.Expires = h.Get(key)
 		} else if key == "etag" {
-			objectMetadata.ETag = h.Get(key)
+			objectMetadata.ETag = strings.Replace(h.Get(key), "\"", "", -1)
 		} else if IsUserDefinedMetadata(key) {
 			objectMetadata.UserMetadata[key] = h.Get(key)
 		}
@@ -113,7 +113,7 @@ func (metadata *ObjectMetadata) AddUserMetadata(key, value string) {
 	metadata.UserMetadata[key] = value
 }
 
-func (metadata *ObjectMetadata) MergeToSignOption(option *bce.SignOption) {
+func (metadata *ObjectMetadata) mergeToSignOption(option *bce.SignOption) {
 	if metadata.CacheControl != "" {
 		option.AddHeader("Cache-Control", metadata.CacheControl)
 	}
@@ -191,6 +191,11 @@ type ObjectSummary struct {
 	Owner        BucketOwner
 }
 
+type ListObjectsRequest struct {
+	BucketName, Delimiter, Marker, Prefix string
+	MaxKeys                               int
+}
+
 type ListObjectsResponse struct {
 	Name           string
 	Prefix         string
@@ -230,7 +235,7 @@ type CopyObjectRequest struct {
 	SourceUnmodifiedSince string          `json:"x-bce-copy-source-if-unmodified-since,omitempty"`
 }
 
-func (copyObjectRequest *CopyObjectRequest) MergeToSignOption(option *bce.SignOption) {
+func (copyObjectRequest CopyObjectRequest) mergeToSignOption(option *bce.SignOption) {
 	m, err := util.ToMap(copyObjectRequest)
 
 	if err != nil {
@@ -249,7 +254,7 @@ func (copyObjectRequest *CopyObjectRequest) MergeToSignOption(option *bce.SignOp
 
 	if copyObjectRequest.ObjectMetadata != nil {
 		option.AddHeader("x-bce-metadata-directive", "replace")
-		copyObjectRequest.ObjectMetadata.MergeToSignOption(option)
+		copyObjectRequest.ObjectMetadata.mergeToSignOption(option)
 	} else {
 		option.AddHeader("x-bce-metadata-directive", "copy")
 	}

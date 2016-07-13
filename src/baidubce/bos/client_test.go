@@ -199,7 +199,7 @@ func TestListObjects(t *testing.T) {
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
 		} else {
-			listObjectsResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+			listObjectsResponse, err := bosClient.ListObjects(bucketName, nil)
 			if err != nil {
 				t.Error(test.Format(method, err.Error(), "nil"))
 			} else if length := len(listObjectsResponse.Contents); length != 1 {
@@ -227,7 +227,7 @@ func TestCopyObject(t *testing.T) {
 			if err != nil {
 				t.Error(test.Format(method, err.Error(), "nil"))
 			} else {
-				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil)
 
 				if err != nil {
 					t.Error(test.Format(method, err.Error(), "nil"))
@@ -259,7 +259,7 @@ func TestCopyObjectFromRequest(t *testing.T) {
 		} else {
 			destKey := "put-object-from-string-copy.txt"
 
-			copyObjectRequest := &CopyObjectRequest{
+			copyObjectRequest := CopyObjectRequest{
 				SrcBucketName:  bucketName,
 				SrcKey:         objectKey,
 				DestBucketName: bucketName,
@@ -278,7 +278,7 @@ func TestCopyObjectFromRequest(t *testing.T) {
 			if err != nil {
 				t.Error(test.Format(method, err.Error(), "nil"))
 			} else {
-				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil, nil)
+				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil)
 
 				if err != nil {
 					t.Error(test.Format(method, err.Error(), "nil"))
@@ -339,7 +339,7 @@ func TestGetObjectFromRequest(t *testing.T) {
 		if err != nil {
 			t.Error(test.Format(method, err.Error(), "nil"))
 		} else {
-			getObjectRequest := &GetObjectRequest{
+			getObjectRequest := GetObjectRequest{
 				BucketName: bucketName,
 				ObjectKey:  objectKey,
 			}
