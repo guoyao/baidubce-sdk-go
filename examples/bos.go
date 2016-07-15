@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"fmt"
@@ -9,9 +9,9 @@ import (
 	"path"
 	"sync"
 
-	bce "baidubce"
-	"baidubce/bos"
-	//"baidubce/util"
+	"github.com/guoyao/baidubce-sdk-go/bos"
+	bce "github.com/guoyao/baidubce-sdk-go/core"
+	//"github.com/guoyao/baidubce-sdk-go/util"
 )
 
 var bosClient = bos.DefaultClient
@@ -752,7 +752,7 @@ func listMultipartUploadsFromRequest() {
 	}
 }
 
-func main() {
+func RunBosExamples() {
 	listParts()
 	return
 	listPartsFromRequest()

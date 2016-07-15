@@ -1,4 +1,4 @@
-package baidubce
+package core
 
 import (
 	"encoding/json"

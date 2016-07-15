@@ -14,8 +14,8 @@
  * @author guoyao
  */
 
-// Package baidubce define a set of core data structure, and implements a set of core functions.
-package baidubce
+// Package core define a set of core data structure, and implements a set of core functions.
+package core
 
 import (
 	"io/ioutil"

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	bce "baidubce"
-	"baidubce/util"
+	bce "github.com/guoyao/baidubce-sdk-go/core"
+	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
 const MIN_PART_NUMBER int = 1

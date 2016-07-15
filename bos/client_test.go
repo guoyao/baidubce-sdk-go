@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"baidubce/test"
-	"baidubce/util"
+	"github.com/guoyao/baidubce-sdk-go/test"
+	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
 var bosClient = DefaultClient

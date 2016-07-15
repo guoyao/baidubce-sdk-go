@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 
-	bce "baidubce"
+	bce "github.com/guoyao/baidubce-sdk-go/core"
+	"github.com/guoyao/baidubce-sdk-go/examples"
 )
 
 var credentials = bce.DefaultCredentials
@@ -32,5 +33,6 @@ func generateAuthorization() {
 }
 
 func main() {
-	generateAuthorization()
+	//generateAuthorization()
+	examples.RunBosExamples()
 }

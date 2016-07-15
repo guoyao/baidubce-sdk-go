@@ -1,9 +1,9 @@
-package baidubce
+package core
 
 import (
 	"testing"
 
-	"baidubce/test"
+	"github.com/guoyao/baidubce-sdk-go/test"
 )
 
 var credentials = Credentials{

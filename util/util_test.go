@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"baidubce/test"
+	"github.com/guoyao/baidubce-sdk-go/test"
 )
 
 const URI string = "http://bos.cn-n1.baidubce.com/v1/example/测试"

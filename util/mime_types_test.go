@@ -3,7 +3,7 @@ package util
 import (
 	"testing"
 
-	"baidubce/test"
+	"github.com/guoyao/baidubce-sdk-go/test"
 )
 
 func TestGuessMimeType(t *testing.T) {

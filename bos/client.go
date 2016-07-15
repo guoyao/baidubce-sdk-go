@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	bce "baidubce"
-	"baidubce/util"
+	bce "github.com/guoyao/baidubce-sdk-go/core"
+	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
 // Client is the client for bos.
