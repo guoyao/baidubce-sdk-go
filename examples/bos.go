@@ -8,13 +8,27 @@ import (
 	"os"
 	"path"
 	"sync"
+	//"time"
 
 	"github.com/guoyao/baidubce-sdk-go/bce"
 	"github.com/guoyao/baidubce-sdk-go/bos"
 	//"github.com/guoyao/baidubce-sdk-go/util"
 )
 
-var bosClient = bos.DefaultClient
+var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK"))
+var bceConfig = bce.NewConfig(credentials)
+var bosConfig = bos.NewConfig(bceConfig)
+var bosClient = bos.NewClient(bosConfig)
+
+func init() {
+	/*
+		bceConfig.Endpoint = "baidubce-sdk-go.bj.bcebos.com"
+		bceConfig.ProxyHost = "agent.baidu.com"
+		bceConfig.ProxyPort = 8118
+		bceConfig.MaxConnections = 6
+		bceConfig.Timeout = 6 * time.Second
+	*/
+}
 
 func getBucketLocation() {
 	option := &bce.SignOption{

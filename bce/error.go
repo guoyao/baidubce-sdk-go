@@ -2,6 +2,7 @@ package bce
 
 import (
 	"encoding/json"
+	"errors"
 )
 
 // Error is a implementation of error.
@@ -37,14 +38,15 @@ func newErrorFromRaw(err error) *Error {
 // NewErrorFromJSON returns a `Error` instance from bytes.
 func NewErrorFromJSON(bytes []byte) *Error {
 	var err *Error
+
 	if bytes == nil || string(bytes) == "" {
-		bytes = []byte("{}")
+		return newErrorFromRaw(errors.New(""))
 	}
 
 	rawError := json.Unmarshal(bytes, &err)
 
 	if rawError != nil {
-		return newErrorFromRaw(rawError)
+		return newErrorFromRaw(errors.New(string(bytes)))
 	}
 
 	return err

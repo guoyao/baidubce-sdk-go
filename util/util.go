@@ -35,6 +35,16 @@ import (
 	"time"
 )
 
+func GetURL(protocol, host, uriPath string, params map[string]string) string {
+	if strings.Index(uriPath, "/") == 0 {
+		uriPath = uriPath[1:]
+	}
+
+	url := fmt.Sprintf("%s/%s?%s", HostToURL(host, protocol), uriPath, ToCanonicalQueryString(params))
+
+	return url
+}
+
 // GetURIPath returns the path part of URI.
 func GetURIPath(uri string) string {
 	uri = strings.Replace(uri, "://", "", 1)
@@ -188,12 +198,14 @@ func TimeStringToRFC1123(str string) string {
 }
 
 // HostToURL returns the whole URL string.
-func HostToURL(host string) string {
+func HostToURL(host, protocol string) string {
 	if matched, _ := regexp.MatchString("^[[:alpha:]]+:", host); matched {
 		return host
 	}
 
-	protocol := "http"
+	if protocol == "" {
+		protocol = "http"
+	}
 
 	return fmt.Sprintf("%s://%s", protocol, host)
 }

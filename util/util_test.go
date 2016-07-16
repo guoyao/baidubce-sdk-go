@@ -60,14 +60,14 @@ func TestTimeStringToRFC1123(t *testing.T) {
 func TestHostToURL(t *testing.T) {
 	expected := "http://bj.bcebos.com"
 	host := "bj.bcebos.com"
-	url := HostToURL(host)
+	url := HostToURL(host, "http")
 
 	if url != expected {
 		t.Error(FormatTest("HostToURL", url, expected))
 	}
 
 	host = "http://bj.bcebos.com"
-	url = HostToURL(host)
+	url = HostToURL(host, "http")
 
 	if url != expected {
 		t.Error(FormatTest("HostToURL", url, expected))

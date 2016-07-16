@@ -21,7 +21,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
+	"net/url"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,14 +32,21 @@ import (
 )
 
 const (
+	Version = "0.1.0"
 	// ExpirationPeriodInSeconds 1800s is the default expiration period.
 	ExpirationPeriodInSeconds = 1800
 )
 
-// Region map of baidubce
+var DefaultUserAgent = strings.Join([]string{
+	"baidubce-sdk-go",
+	Version,
+	runtime.GOOS,
+	runtime.Version(),
+}, "/")
+
 var Region = map[string]string{
-	"bj": "bj.bcebos.com",
-	"gz": "gz.bcebos.com",
+	"bj": "bj",
+	"gz": "gz",
 }
 
 // Credentials struct for baidubce.
@@ -52,21 +60,47 @@ func NewCredentials(AccessKeyID, secretAccessKey string) *Credentials {
 	return &Credentials{AccessKeyID, secretAccessKey}
 }
 
-// DefaultCredentials provided a default `Credentials` instance.
-var DefaultCredentials = Credentials{
-	os.Getenv("BAIDU_BCE_AK"),
-	os.Getenv("BAIDU_BCE_SK"),
-}
-
 // Config contains options for baidubce api.
 type Config struct {
-	Credentials
+	*Credentials
+	Region     string
 	Endpoint   string
 	APIVersion string
+	Protocol   string
+	UserAgent  string
+	ProxyHost  string
+	ProxyPort  int
+	//ConnectionTimeoutInMillis time.Duration // default value: 10 * time.Second in http.DefaultTransport
+	MaxConnections int           // default value: 2 in http.DefaultMaxIdleConnsPerHost
+	Timeout        time.Duration // default value: 0 in http.Client
 }
 
-// DefaultConfig provided a default `Config` instance.
-var DefaultConfig = Config{DefaultCredentials, "", "v1"}
+func NewConfig(credentials *Credentials) *Config {
+	return &Config{
+		Credentials: credentials,
+		Region:      Region["bj"],
+	}
+}
+
+func (config *Config) GetRegion() string {
+	region := config.Region
+
+	if region == "" {
+		region = Region["bj"]
+	}
+
+	return region
+}
+
+func (config *Config) GetUserAgent() string {
+	userAgent := config.UserAgent
+
+	if userAgent == "" {
+		userAgent = DefaultUserAgent
+	}
+
+	return userAgent
+}
 
 // SignOption contains options for signature of baidubce api.
 type SignOption struct {
@@ -203,25 +237,76 @@ func GenerateAuthorization(credentials Credentials, req Request, option *SignOpt
 
 // Client is the base client struct for all products of baidubce.
 type Client struct {
-	Config
+	*Config
 }
 
-func (c *Client) GetUriPath(uriPath string) string {
+func NewClient(config *Config) *Client {
+	return &Client{config}
+}
+
+func (c *Client) GetURL(host, uriPath string, params map[string]string) string {
 	if strings.Index(uriPath, "/") == 0 {
 		uriPath = uriPath[1:]
 	}
 
 	if c.APIVersion != "" {
-		return fmt.Sprintf("/%s/%s", c.APIVersion, uriPath)
+		uriPath = fmt.Sprintf("%s/%s", c.APIVersion, uriPath)
 	}
 
-	return fmt.Sprintf("/%s", uriPath)
+	return util.GetURL(c.Protocol, host, uriPath, params)
 }
 
 // SendRequest sends a http request to the endpoint of baidubce api.
-func (c *Client) SendRequest(req *Request, option *SignOption, autoReadAllBytesFromResponseBody bool) (*Response, *Error) {
-	GenerateAuthorization(c.Credentials, *req, option)
-	httpClient := http.Client{}
+func (c *Client) SendRequest(req *Request, option *SignOption,
+	autoReadAllBytesFromResponseBody bool) (*Response, *Error) {
+
+	if option == nil {
+		option = &SignOption{}
+	}
+
+	option.AddHeader("User-Agent", c.GetUserAgent())
+	GenerateAuthorization(*c.Credentials, *req, option)
+
+	transport := new(http.Transport)
+
+	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
+		transport.Proxy = defaultTransport.Proxy
+		transport.Dial = defaultTransport.Dial
+		transport.TLSHandshakeTimeout = defaultTransport.TLSHandshakeTimeout
+		transport.ExpectContinueTimeout = defaultTransport.ExpectContinueTimeout
+	}
+
+	if c.ProxyHost != "" {
+		host := c.ProxyHost
+
+		if c.ProxyPort > 0 {
+			host += ":" + strconv.Itoa(c.ProxyPort)
+		}
+
+		proxyUrl, err := url.Parse(util.HostToURL(host, "http"))
+
+		if err != nil {
+			return nil, NewError(err)
+		}
+
+		transport.Proxy = http.ProxyURL(proxyUrl)
+	}
+
+	/*
+		if c.ConnectionTimeout > 0 {
+			transport.TLSHandshakeTimeout = c.ConnectionTimeout
+		}
+	*/
+
+	if c.MaxConnections > 0 {
+		transport.MaxIdleConnsPerHost = c.MaxConnections
+	}
+
+	httpClient := http.Client{
+		Transport: transport,
+		Timeout:   c.Timeout,
+	}
+
 	res, err := httpClient.Do(req.raw())
 
 	if err != nil {

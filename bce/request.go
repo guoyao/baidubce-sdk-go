@@ -18,7 +18,6 @@
 package bce
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -37,17 +36,8 @@ var canonicalHeaders = []string{
 type Request http.Request
 
 // NewRequest returns an instance of type `Request`
-func NewRequest(method, uriPath, endpoint string,
-	params map[string]string, body io.Reader) (*Request, error) {
-
+func NewRequest(method, url string, body io.Reader) (*Request, error) {
 	method = strings.ToUpper(method)
-	host := Region["bj"]
-	if endpoint != "" {
-		host = endpoint
-	}
-
-	url := fmt.Sprintf("%s%s?%s", util.HostToURL(host), uriPath,
-		util.ToCanonicalQueryString(params))
 
 	rawRequest, err := http.NewRequest(method, url, body)
 	req := (*Request)(rawRequest)

@@ -47,23 +47,21 @@ func TestGenerateAuthorization(t *testing.T) {
 }
 
 func getRequest() *Request {
-	request, _ := NewRequest(
-		"PUT",
-		"/v1/test/myfolder/readme.txt",
-		"",
-		map[string]string{
-			"partNumber": "9",
-			"uploadId":   "VXBsb2FkIElpZS5tMnRzIHVwbG9hZA",
-		},
-		nil,
-	)
+	params := map[string]string{
+		"partNumber": "9",
+		"uploadId":   "VXBsb2FkIElpZS5tMnRzIHVwbG9hZA",
+	}
+
+	url := util.GetURL("http", "bj.bcebos.com", "/v1/test/myfolder/readme.txt", params)
+
+	request, _ := NewRequest("PUT", url, nil)
 
 	return request
 }
 
 func getHeaders() map[string]string {
 	headers := map[string]string{
-		"Host":           Region["bj"],
+		"Host":           "bj.bcebos.com",
 		"Date":           "Mon, 27 Apr 2015 16:23:49 +0800",
 		"Content-Type":   "text/plain",
 		"Content-Length": "8",

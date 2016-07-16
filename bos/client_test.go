@@ -12,10 +12,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/guoyao/baidubce-sdk-go/bce"
 	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
-var bosClient = DefaultClient
+var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK"))
+var bceConfig = bce.NewConfig(credentials)
+var bosConfig = NewConfig(bceConfig)
+var bosClient = NewClient(bosConfig)
 
 func TestGetBucketLocation(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-get-bucket-location-"

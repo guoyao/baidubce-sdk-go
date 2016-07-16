@@ -16,18 +16,32 @@ import (
 	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
+// Endpoints of baidubce
+var Endpoint = map[string]string{
+	"bj": "bj.bcebos.com",
+	"gz": "gz.bcebos.com",
+}
+
+type Config struct {
+	*bce.Config
+}
+
+func NewConfig(config *bce.Config) *Config {
+	return &Config{config}
+}
+
 // Client is the client for bos.
 type Client struct {
-	bce.Client
+	*bce.Client
 }
 
 // DefaultClient provided a default `bos.Client` instance.
-var DefaultClient = Client{bce.Client{bce.DefaultConfig}}
+//var DefaultClient = NewClient(bce.DefaultConfig)
 
 // NewClient returns an instance of type `bos.Client`.
-func NewClient(config bce.Config) Client {
-	bceClient := bce.Client{config}
-	return Client{bceClient}
+func NewClient(config *Config) *Client {
+	bceClient := bce.NewClient(config.Config)
+	return &Client{bceClient}
 }
 
 func checkBucketName(bucketName string) {
@@ -52,7 +66,7 @@ func checkObjectKey(objectKey string) {
 
 // GetBucketName returns the actual name of bucket.
 func (c *Client) GetBucketName(bucketName string) string {
-	if c.Endpoint != "" && !util.MapContains(bce.Region, func(key, value string) bool {
+	if c.Endpoint != "" && !util.MapContains(Endpoint, func(key, value string) bool {
 		return strings.ToLower(value) == strings.ToLower(c.Endpoint)
 	}) {
 		bucketName = ""
@@ -61,18 +75,20 @@ func (c *Client) GetBucketName(bucketName string) string {
 	return bucketName
 }
 
-func (c *Client) GetBucketEndpoint(bucketName string) string {
-	endpoint := c.Endpoint
+func (c *Client) GetURL(bucketName, objectKey string, params map[string]string) string {
+	host := c.Endpoint
 
-	if endpoint == "" {
-		endpoint = bce.Region["bj"]
+	if host == "" {
+		host = Endpoint[c.GetRegion()]
+
+		if bucketName != "" {
+			host = bucketName + "." + host
+		}
 	}
 
-	if bucketName != "" {
-		endpoint = bucketName + "." + endpoint
-	}
+	uriPath := objectKey
 
-	return endpoint
+	return c.Client.GetURL(host, uriPath, params)
 }
 
 // GetBucketLocation returns the location of a bucket.
@@ -80,7 +96,7 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 	bucketName = c.GetBucketName(bucketName)
 	params := map[string]string{"location": ""}
 
-	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("GET", c.GetURL(bucketName, "", params), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -104,7 +120,7 @@ func (c *Client) GetBucketLocation(bucketName string, option *bce.SignOption) (*
 
 // ListBuckets is for getting a collection of bucket.
 func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error) {
-	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.Endpoint, nil, nil)
+	req, err := bce.NewRequest("GET", c.GetURL("", "", nil), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -128,7 +144,7 @@ func (c *Client) ListBuckets(option *bce.SignOption) (*BucketSummary, *bce.Error
 
 // CreateBucket is for creating a bucket.
 func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Error {
-	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
+	req, err := bce.NewRequest("PUT", c.GetURL(bucketName, "", nil), nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -143,7 +159,7 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) *bce.Er
 }
 
 func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (bool, *bce.Error) {
-	req, err := bce.NewRequest("HEAD", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
+	req, err := bce.NewRequest("HEAD", c.GetURL(bucketName, "", nil), nil)
 
 	if err != nil {
 		return false, bce.NewError(err)
@@ -164,7 +180,7 @@ func (c *Client) DoesBucketExist(bucketName string, option *bce.SignOption) (boo
 }
 
 func (c *Client) DeleteBucket(bucketName string, option *bce.SignOption) *bce.Error {
-	req, err := bce.NewRequest("DELETE", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), nil, nil)
+	req, err := bce.NewRequest("DELETE", c.GetURL(bucketName, "", nil), nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -189,7 +205,7 @@ func (c *Client) SetBucketPublicReadWrite(bucketName string, option *bce.SignOpt
 
 func (c *Client) GetBucketAcl(bucketName string, option *bce.SignOption) (*BucketAcl, *bce.Error) {
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("GET", c.GetURL(bucketName, "", params), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -219,7 +235,7 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 	}
 
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, bytes.NewReader(byteArray))
+	req, err := bce.NewRequest("PUT", c.GetURL(bucketName, "", params), bytes.NewReader(byteArray))
 
 	if err != nil {
 		return bce.NewError(err)
@@ -256,7 +272,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{},
 		panic("data type should be string or []byte or io.Reader.")
 	}
 
-	req, err := bce.NewRequest("PUT", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, reader)
+	req, err := bce.NewRequest("PUT", c.GetURL(bucketName, objectKey, nil), reader)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -284,7 +300,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{},
 func (c *Client) DeleteObject(bucketName, objectKey string, option *bce.SignOption) *bce.Error {
 	checkObjectKey(objectKey)
 
-	req, err := bce.NewRequest("DELETE", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
+	req, err := bce.NewRequest("DELETE", c.GetURL(bucketName, objectKey, nil), nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -322,7 +338,7 @@ func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string,
 	params := map[string]string{"delete": ""}
 	body := bytes.NewReader(byteArray)
 
-	req, err := bce.NewRequest("POST", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, body)
+	req, err := bce.NewRequest("POST", c.GetURL(bucketName, "", params), body)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -377,7 +393,7 @@ func (c *Client) ListObjectsFromRequest(listObjectsRequest ListObjectsRequest,
 		params["maxKeys"] = strconv.Itoa(listObjectsRequest.MaxKeys)
 	}
 
-	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("GET", c.GetURL(bucketName, "", params), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -418,8 +434,7 @@ func (c *Client) CopyObjectFromRequest(copyObjectRequest CopyObjectRequest,
 	checkObjectKey(copyObjectRequest.SrcKey)
 	checkObjectKey(copyObjectRequest.DestKey)
 
-	req, err := bce.NewRequest("PUT", c.GetUriPath(copyObjectRequest.DestKey),
-		c.GetBucketEndpoint(copyObjectRequest.DestBucketName), nil, nil)
+	req, err := bce.NewRequest("PUT", c.GetURL(copyObjectRequest.DestBucketName, copyObjectRequest.DestKey, nil), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -463,13 +478,7 @@ func (c *Client) GetObjectFromRequest(getObjectRequest GetObjectRequest,
 	checkBucketName(getObjectRequest.BucketName)
 	checkObjectKey(getObjectRequest.ObjectKey)
 
-	req, err := bce.NewRequest(
-		"GET",
-		c.GetUriPath(getObjectRequest.ObjectKey),
-		c.GetBucketEndpoint(getObjectRequest.BucketName),
-		nil,
-		nil,
-	)
+	req, err := bce.NewRequest("GET", c.GetURL(getObjectRequest.BucketName, getObjectRequest.ObjectKey, nil), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -504,13 +513,7 @@ func (c *Client) GetObjectToFile(getObjectRequest *GetObjectRequest, file *os.Fi
 	checkBucketName(getObjectRequest.BucketName)
 	checkObjectKey(getObjectRequest.ObjectKey)
 
-	req, err := bce.NewRequest(
-		"GET",
-		c.GetUriPath(getObjectRequest.ObjectKey),
-		c.GetBucketEndpoint(getObjectRequest.BucketName),
-		nil,
-		nil,
-	)
+	req, err := bce.NewRequest("GET", c.GetURL(getObjectRequest.BucketName, getObjectRequest.ObjectKey, nil), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -540,7 +543,7 @@ func (c *Client) GetObjectMetadata(bucketName, objectKey string, option *bce.Sig
 	checkBucketName(bucketName)
 	checkObjectKey(objectKey)
 
-	req, err := bce.NewRequest("HEAD", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
+	req, err := bce.NewRequest("HEAD", c.GetURL(bucketName, objectKey, nil), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -561,7 +564,7 @@ func (c *Client) GeneratePresignedUrl(bucketName, objectKey string, option *bce.
 	checkBucketName(bucketName)
 	checkObjectKey(objectKey)
 
-	req, err := bce.NewRequest("GET", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), nil, nil)
+	req, err := bce.NewRequest("GET", c.GetURL(bucketName, objectKey, nil), nil)
 
 	if err != nil {
 		return "", bce.NewError(err)
@@ -570,7 +573,7 @@ func (c *Client) GeneratePresignedUrl(bucketName, objectKey string, option *bce.
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("host")
 
-	authorization := bce.GenerateAuthorization(c.Credentials, *req, option)
+	authorization := bce.GenerateAuthorization(*c.Credentials, *req, option)
 	url := fmt.Sprintf("%s?authorization=%s", req.URL.String(), util.URLEncode(authorization))
 
 	return url, nil
@@ -606,7 +609,7 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 		params["offset"] = strconv.Itoa(offset)
 	}
 
-	req, err := bce.NewRequest("POST", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), params, reader)
+	req, err := bce.NewRequest("POST", c.GetURL(bucketName, objectKey, params), reader)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -642,7 +645,7 @@ func (c *Client) InitiateMultipartUpload(initiateMultipartUploadRequest Initiate
 
 	params := map[string]string{"uploads": ""}
 
-	req, err := bce.NewRequest("POST", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("POST", c.GetURL(bucketName, objectKey, params), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -694,8 +697,7 @@ func (c *Client) UploadPart(uploadPartRequest UploadPartRequest,
 		"uploadId":   uploadPartRequest.UploadId,
 	}
 
-	req, err := bce.NewRequest("PUT", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName),
-		params, bytes.NewReader(uploadPartRequest.PartData))
+	req, err := bce.NewRequest("PUT", c.GetURL(bucketName, objectKey, params), bytes.NewReader(uploadPartRequest.PartData))
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -738,8 +740,7 @@ func (c *Client) CompleteMultipartUpload(completeMultipartUploadRequest Complete
 		return nil, bce.NewError(err)
 	}
 
-	req, err := bce.NewRequest("POST", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName),
-		params, bytes.NewReader(byteArray))
+	req, err := bce.NewRequest("POST", c.GetURL(bucketName, objectKey, params), bytes.NewReader(byteArray))
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -881,7 +882,7 @@ func (c *Client) AbortMultipartUpload(abortMultipartUploadRequest AbortMultipart
 
 	params := map[string]string{"uploadId": abortMultipartUploadRequest.UploadId}
 
-	req, err := bce.NewRequest("DELETE", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("DELETE", c.GetURL(bucketName, objectKey, params), nil)
 
 	if err != nil {
 		return bce.NewError(err)
@@ -918,7 +919,7 @@ func (c *Client) ListPartsFromRequest(listPartsRequest ListPartsRequest,
 		params["maxParts"] = strconv.Itoa(listPartsRequest.MaxParts)
 	}
 
-	req, err := bce.NewRequest("GET", c.GetUriPath(objectKey), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("GET", c.GetURL(bucketName, objectKey, params), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -970,7 +971,7 @@ func (c *Client) ListMultipartUploadsFromRequest(listMultipartUploadsRequest Lis
 		params["maxUploads"] = strconv.Itoa(listMultipartUploadsRequest.MaxUploads)
 	}
 
-	req, err := bce.NewRequest("GET", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("GET", c.GetURL(bucketName, "", params), nil)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -995,7 +996,7 @@ func (c *Client) ListMultipartUploadsFromRequest(listMultipartUploadsRequest Lis
 
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) *bce.Error {
 	params := map[string]string{"acl": ""}
-	req, err := bce.NewRequest("PUT", c.GetUriPath(""), c.GetBucketEndpoint(bucketName), params, nil)
+	req, err := bce.NewRequest("PUT", c.GetURL(bucketName, "", params), nil)
 
 	if err != nil {
 		return bce.NewError(err)
