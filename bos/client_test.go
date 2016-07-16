@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/guoyao/baidubce-sdk-go/test"
 	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
@@ -27,7 +26,7 @@ func TestGetBucketLocation(t *testing.T) {
 		location, _ := bosClient.GetBucketLocation(bucketName, nil)
 
 		if location.LocationConstraint != expected {
-			t.Error(test.Format(method, location.LocationConstraint, expected))
+			t.Error(util.FormatTest(method, location.LocationConstraint, expected))
 		}
 	})
 }
@@ -36,7 +35,7 @@ func TestListBuckets(t *testing.T) {
 	_, err := bosClient.ListBuckets(nil)
 
 	if err != nil {
-		t.Error(test.Format("ListBuckets", err.Error(), "nil"))
+		t.Error(util.FormatTest("ListBuckets", err.Error(), "nil"))
 	}
 }
 
@@ -56,9 +55,9 @@ func TestDoesBucketExist(t *testing.T) {
 		exists, err := bosClient.DoesBucketExist(bucketName, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), strconv.FormatBool(expected)))
+			t.Error(util.FormatTest(method, err.Error(), strconv.FormatBool(expected)))
 		} else if exists != expected {
-			t.Error(test.Format(method, strconv.FormatBool(exists), strconv.FormatBool(expected)))
+			t.Error(util.FormatTest(method, strconv.FormatBool(exists), strconv.FormatBool(expected)))
 		}
 	})
 
@@ -78,7 +77,7 @@ func TestSetBucketPrivate(t *testing.T) {
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		err := bosClient.SetBucketPrivate(bucketName, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		}
 	})
 }
@@ -90,7 +89,7 @@ func TestSetBucketPublicRead(t *testing.T) {
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		err := bosClient.SetBucketPublicRead(bucketName, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		}
 	})
 }
@@ -102,7 +101,7 @@ func TestSetBucketPublicReadWrite(t *testing.T) {
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		err := bosClient.SetBucketPublicReadWrite(bucketName, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		}
 	})
 }
@@ -114,7 +113,7 @@ func TestGetBucketAcl(t *testing.T) {
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		_, err := bosClient.GetBucketAcl(bucketName, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		}
 	})
 }
@@ -135,7 +134,7 @@ func TestSetBucketAcl(t *testing.T) {
 			},
 		}
 		if err := bosClient.SetBucketAcl(bucketName, bucketAcl, nil); err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		}
 	})
 }
@@ -149,7 +148,7 @@ func TestPubObject(t *testing.T) {
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		}
 	})
 }
@@ -163,7 +162,7 @@ func TestDeleteObject(t *testing.T) {
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		}
 	})
 }
@@ -184,7 +183,7 @@ func TestDeleteMultipleObjects(t *testing.T) {
 			_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			}
 		}
 	})
@@ -199,13 +198,13 @@ func TestListObjects(t *testing.T) {
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			listObjectsResponse, err := bosClient.ListObjects(bucketName, nil)
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else if length := len(listObjectsResponse.Contents); length != 1 {
-				t.Error(test.Format(method, strconv.Itoa(length), "1"))
+				t.Error(util.FormatTest(method, strconv.Itoa(length), "1"))
 			}
 		}
 	})
@@ -221,25 +220,25 @@ func TestCopyObject(t *testing.T) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			destKey := "put-object-from-string-copy.txt"
 			_, err := bosClient.CopyObject(bucketName, objectKey, bucketName, destKey, nil)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else {
 				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				} else if length := len(listObjectsResponse.Contents); length != 2 {
-					t.Error(test.Format(method, strconv.Itoa(length), "2"))
+					t.Error(util.FormatTest(method, strconv.Itoa(length), "2"))
 				} else {
 					err = bosClient.DeleteObject(bucketName, destKey, nil)
 
 					if err != nil {
-						t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+						t.Error(util.FormatTest(method+" at deleting object", err.Error(), "nil"))
 					}
 				}
 			}
@@ -257,7 +256,7 @@ func TestCopyObjectFromRequest(t *testing.T) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			destKey := "put-object-from-string-copy.txt"
 
@@ -278,19 +277,19 @@ func TestCopyObjectFromRequest(t *testing.T) {
 			_, err := bosClient.CopyObjectFromRequest(copyObjectRequest, nil)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else {
 				listObjectsResponse, err := bosClient.ListObjects(bucketName, nil)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				} else if length := len(listObjectsResponse.Contents); length != 2 {
-					t.Error(test.Format(method, strconv.Itoa(length), "2"))
+					t.Error(util.FormatTest(method, strconv.Itoa(length), "2"))
 				} else {
 					err = bosClient.DeleteObject(bucketName, destKey, nil)
 
 					if err != nil {
-						t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+						t.Error(util.FormatTest(method+" at deleting object", err.Error(), "nil"))
 					}
 				}
 			}
@@ -308,21 +307,21 @@ func TestGetObject(t *testing.T) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			object, err := bosClient.GetObject(bucketName, objectKey, nil)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else if object.ObjectMetadata.ETag == "" {
-				t.Error(test.Format(method, "etag is empty", "non empty etag"))
+				t.Error(util.FormatTest(method, "etag is empty", "non empty etag"))
 			} else {
 				byteArray, err := ioutil.ReadAll(object.ObjectContent)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				} else if len(byteArray) == 0 {
-					t.Error(test.Format(method, "body is empty", "non empty body"))
+					t.Error(util.FormatTest(method, "body is empty", "non empty body"))
 				}
 			}
 		}
@@ -339,7 +338,7 @@ func TestGetObjectFromRequest(t *testing.T) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			getObjectRequest := GetObjectRequest{
 				BucketName: bucketName,
@@ -349,16 +348,16 @@ func TestGetObjectFromRequest(t *testing.T) {
 			object, err := bosClient.GetObjectFromRequest(getObjectRequest, nil)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else if object.ObjectMetadata.ETag == "" {
-				t.Error(test.Format(method, "etag is empty", "non empty etag"))
+				t.Error(util.FormatTest(method, "etag is empty", "non empty etag"))
 			} else {
 				byteArray, err := ioutil.ReadAll(object.ObjectContent)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				} else if len(byteArray) == 0 {
-					t.Error(test.Format(method, "body is empty", "non empty body"))
+					t.Error(util.FormatTest(method, "body is empty", "non empty body"))
 				}
 			}
 		}
@@ -375,7 +374,7 @@ func TestGetObjectToFile(t *testing.T) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			getObjectRequest := &GetObjectRequest{
 				BucketName: bucketName,
@@ -386,21 +385,21 @@ func TestGetObjectToFile(t *testing.T) {
 			file, err := os.OpenFile(objectKey, os.O_WRONLY|os.O_CREATE, 0666)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else {
 				objectMetadata, err := bosClient.GetObjectToFile(getObjectRequest, file, nil)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				} else if objectMetadata.ETag == "" {
-					t.Error(test.Format(method, "etag is empty", "non empty etag"))
+					t.Error(util.FormatTest(method, "etag is empty", "non empty etag"))
 				} else if !util.CheckFileExists(objectKey) {
-					t.Error(test.Format(method, "file is not saved to local", "file saved to local"))
+					t.Error(util.FormatTest(method, "file is not saved to local", "file saved to local"))
 				} else {
 					err := os.Remove(objectKey)
 
 					if err != nil {
-						t.Error(test.Format(method, err.Error(), "nil"))
+						t.Error(util.FormatTest(method, err.Error(), "nil"))
 					}
 				}
 			}
@@ -418,14 +417,14 @@ func TestGetObjectMetadata(t *testing.T) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			objectMetadata, err := bosClient.GetObjectMetadata(bucketName, objectKey, nil)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else if objectMetadata.ETag == "" {
-				t.Error(test.Format(method, "etag is empty", "non empty etag"))
+				t.Error(util.FormatTest(method, "etag is empty", "non empty etag"))
 			}
 		}
 	})
@@ -441,25 +440,25 @@ func TestGeneratePresignedUrl(t *testing.T) {
 		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else {
 			url, err := bosClient.GeneratePresignedUrl(bucketName, objectKey, nil)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else {
 				req, err := http.NewRequest("GET", url, nil)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				} else {
 					httpClient := http.Client{}
 					res, err := httpClient.Do(req)
 
 					if err != nil {
-						t.Error(test.Format(method, err.Error(), "nil"))
+						t.Error(util.FormatTest(method, err.Error(), "nil"))
 					} else if res.StatusCode != 200 {
-						t.Error(test.Format(method, fmt.Sprintf("status code: %v", res.StatusCode), "status code: 200"))
+						t.Error(util.FormatTest(method, fmt.Sprintf("status code: %v", res.StatusCode), "status code: 200"))
 					}
 				}
 			}
@@ -477,29 +476,29 @@ func TestAppendObject(t *testing.T) {
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
 		appendObjectResponse, err := bosClient.AppendObject(bucketName, objectKey, offset, str, nil, nil)
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else if appendObjectResponse.GetETag() == "" || appendObjectResponse.GetNextAppendOffset() == "" {
-			t.Error(test.Format(method, "etag and next append offset are not exists", "etag and next append offset"))
+			t.Error(util.FormatTest(method, "etag and next append offset are not exists", "etag and next append offset"))
 		} else {
 			length, err := strconv.Atoi(appendObjectResponse.GetNextAppendOffset())
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			} else {
 				offset = length
 				appendObjectResponse, err := bosClient.AppendObject(bucketName, objectKey, offset, str, nil, nil)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				} else if appendObjectResponse.GetETag() == "" || appendObjectResponse.GetNextAppendOffset() == "" {
-					t.Error(test.Format(method, "etag and next append offset are not exists", "etag and next append offset"))
+					t.Error(util.FormatTest(method, "etag and next append offset are not exists", "etag and next append offset"))
 				} else {
 					length, err := strconv.Atoi(appendObjectResponse.GetNextAppendOffset())
 
 					if err != nil {
-						t.Error(test.Format(method, err.Error(), "nil"))
+						t.Error(util.FormatTest(method, err.Error(), "nil"))
 					} else if length != offset*2 {
-						t.Error(test.Format(method, strconv.Itoa(length), strconv.Itoa(offset*2)))
+						t.Error(util.FormatTest(method, strconv.Itoa(length), strconv.Itoa(offset*2)))
 					}
 				}
 			}
@@ -516,7 +515,7 @@ func TestMultipartUploadFromFile(t *testing.T) {
 		pwd, err := os.Getwd()
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
@@ -527,9 +526,9 @@ func TestMultipartUploadFromFile(t *testing.T) {
 			objectKey, filePath, partSize)
 
 		if bceError != nil {
-			t.Error(test.Format(method, bceError.Error(), "nil"))
+			t.Error(util.FormatTest(method, bceError.Error(), "nil"))
 		} else if completeMultipartUploadResponse.ETag == "" {
-			t.Error(test.Format(method, "etag is not exists", "etag"))
+			t.Error(util.FormatTest(method, "etag is not exists", "etag"))
 		}
 	})
 }
@@ -548,7 +547,7 @@ func TestAbortMultipartUpload(t *testing.T) {
 		initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
@@ -563,7 +562,7 @@ func TestAbortMultipartUpload(t *testing.T) {
 		err = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 	})
@@ -583,7 +582,7 @@ func TestListMultipartUploads(t *testing.T) {
 		initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
@@ -598,7 +597,7 @@ func TestListMultipartUploads(t *testing.T) {
 				err = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
 
 				if err != nil {
-					t.Error(test.Format(method, err.Error(), "nil"))
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				}
 			}
 		}()
@@ -606,14 +605,14 @@ func TestListMultipartUploads(t *testing.T) {
 		listMultipartUploadsResponse, err := bosClient.ListMultipartUploads(bucketName, nil)
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
 		partCount := len(listMultipartUploadsResponse.Uploads)
 
 		if partCount != 1 {
-			t.Error(test.Format(method, fmt.Sprintf("part count is %d", partCount), "part count should be 1"))
+			t.Error(util.FormatTest(method, fmt.Sprintf("part count is %d", partCount), "part count should be 1"))
 		}
 	})
 }
@@ -632,7 +631,7 @@ func TestListParts(t *testing.T) {
 		initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
 		if bceError != nil {
-			t.Error(test.Format(method, bceError.Error(), "nil"))
+			t.Error(util.FormatTest(method, bceError.Error(), "nil"))
 			return
 		}
 
@@ -647,7 +646,7 @@ func TestListParts(t *testing.T) {
 				bceError := bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
 
 				if bceError != nil {
-					t.Error(test.Format(method, bceError.Error(), "nil"))
+					t.Error(util.FormatTest(method, bceError.Error(), "nil"))
 				}
 			}
 		}()
@@ -655,7 +654,7 @@ func TestListParts(t *testing.T) {
 		pwd, err := os.Getwd()
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
@@ -665,14 +664,14 @@ func TestListParts(t *testing.T) {
 		defer file.Close()
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
 		fileInfo, err := file.Stat()
 
 		if err != nil {
-			t.Error(test.Format(method, err.Error(), "nil"))
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
@@ -691,7 +690,7 @@ func TestListParts(t *testing.T) {
 			_, err := file.Read(byteArray)
 
 			if err != nil {
-				t.Error(test.Format(method, err.Error(), "nil"))
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 				return
 			}
 
@@ -716,7 +715,7 @@ func TestListParts(t *testing.T) {
 				uploadPartResponse, bceError := bosClient.UploadPart(uploadPartRequest, nil)
 
 				if bceError != nil {
-					t.Error(test.Format(method, bceError.Error(), "nil"))
+					t.Error(util.FormatTest(method, bceError.Error(), "nil"))
 					return
 				}
 
@@ -729,14 +728,14 @@ func TestListParts(t *testing.T) {
 		listPartsResponse, bceError := bosClient.ListParts(bucketName, objectKey, initiateMultipartUploadResponse.UploadId, nil)
 
 		if bceError != nil {
-			t.Error(test.Format(method, bceError.Error(), "nil"))
+			t.Error(util.FormatTest(method, bceError.Error(), "nil"))
 			return
 		}
 
 		partCount = len(listPartsResponse.Parts)
 
 		if partCount != 2 {
-			t.Error(test.Format(method, fmt.Sprintf("part count is %d", partCount), "part count should be 2"))
+			t.Error(util.FormatTest(method, fmt.Sprintf("part count is %d", partCount), "part count should be 2"))
 		}
 	})
 }
@@ -746,7 +745,7 @@ func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}
 	err := bosClient.CreateBucket(bucketName, nil)
 
 	if err != nil {
-		t.Error(test.Format(method+" at creating bucket", err.Error(), "nil"))
+		t.Error(util.FormatTest(method+" at creating bucket", err.Error(), "nil"))
 	} else {
 		if f != nil {
 			f(bucketName)
@@ -756,7 +755,7 @@ func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}
 					err = bosClient.DeleteObject(bucketName, key, nil)
 
 					if err != nil {
-						t.Error(test.Format(method+" at deleting object", err.Error(), "nil"))
+						t.Error(util.FormatTest(method+" at deleting object", err.Error(), "nil"))
 					}
 				}
 			} else if keys, ok := objectKey.([]string); ok {
@@ -764,7 +763,7 @@ func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}
 					deleteMultipleObjectsResponse, err := bosClient.DeleteMultipleObjects(bucketName, keys, nil)
 
 					if err != nil {
-						t.Error(test.Format(method, err.Error(), "nil"))
+						t.Error(util.FormatTest(method, err.Error(), "nil"))
 					} else if deleteMultipleObjectsResponse != nil {
 						str := ""
 
@@ -772,18 +771,18 @@ func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}
 							str += deleteMultipleObjectsError.Error()
 						}
 
-						t.Error(test.Format(method, str, "empty string"))
+						t.Error(util.FormatTest(method, str, "empty string"))
 					}
 				}
 			} else {
-				t.Error(test.Format(method, "objectKey is not valid", "objectKey should be string or []string"))
+				t.Error(util.FormatTest(method, "objectKey is not valid", "objectKey should be string or []string"))
 			}
 		}
 
 		err = bosClient.DeleteBucket(bucketName, nil)
 
 		if err != nil {
-			t.Error(test.Format(method+" at deleting bucket", err.Error(), "nil"))
+			t.Error(util.FormatTest(method+" at deleting bucket", err.Error(), "nil"))
 		}
 	}
 }

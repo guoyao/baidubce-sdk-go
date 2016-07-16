@@ -14,8 +14,8 @@
  * @author guoyao
  */
 
-// Package core define a set of core data structure, and implements a set of core functions.
-package core
+// Package bce define a set of core data structure and functions for baidubce.
+package bce
 
 import (
 	"fmt"

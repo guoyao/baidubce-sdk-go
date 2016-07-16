@@ -1,4 +1,4 @@
-package core
+package bce
 
 import (
 	"encoding/json"

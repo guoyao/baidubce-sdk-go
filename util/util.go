@@ -329,3 +329,8 @@ func CheckFileExists(filename string) bool {
 
 	return exist
 }
+
+// FormatTest returns a formatted string.
+func FormatTest(funcName, got, expected string) string {
+	return fmt.Sprintf("%s failed. Got %s, expected %s", funcName, got, expected)
+}

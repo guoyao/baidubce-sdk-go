@@ -9,8 +9,8 @@ import (
 	"path"
 	"sync"
 
+	"github.com/guoyao/baidubce-sdk-go/bce"
 	"github.com/guoyao/baidubce-sdk-go/bos"
-	bce "github.com/guoyao/baidubce-sdk-go/core"
 	//"github.com/guoyao/baidubce-sdk-go/util"
 )
 

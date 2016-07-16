@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	bce "github.com/guoyao/baidubce-sdk-go/core"
+	"github.com/guoyao/baidubce-sdk-go/bce"
 	"github.com/guoyao/baidubce-sdk-go/util"
 )
 

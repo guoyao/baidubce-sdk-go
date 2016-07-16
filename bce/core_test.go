@@ -1,9 +1,9 @@
-package core
+package bce
 
 import (
 	"testing"
 
-	"github.com/guoyao/baidubce-sdk-go/test"
+	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
 var credentials = Credentials{
@@ -23,7 +23,7 @@ func TestGetSigningKey(t *testing.T) {
 	signingKey := getSigningKey(credentials, defaultSignOption)
 
 	if signingKey != expected {
-		t.Error(test.Format("getSigningKey", signingKey, expected))
+		t.Error(util.FormatTest("getSigningKey", signingKey, expected))
 	}
 }
 
@@ -33,7 +33,7 @@ func TestSign(t *testing.T) {
 	signature := sign(credentials, *req, defaultSignOption)
 
 	if signature != expected {
-		t.Error(test.Format("sign", signature, expected))
+		t.Error(util.FormatTest("sign", signature, expected))
 	}
 }
 
@@ -42,7 +42,7 @@ func TestGenerateAuthorization(t *testing.T) {
 	req := getRequest()
 	authorization := GenerateAuthorization(credentials, *req, defaultSignOption)
 	if authorization != expected {
-		t.Error(test.Format("GenerateAuthorization", authorization, expected))
+		t.Error(util.FormatTest("GenerateAuthorization", authorization, expected))
 	}
 }
 

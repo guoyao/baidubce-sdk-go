@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/guoyao/baidubce-sdk-go/test"
 )
 
 const URI string = "http://bos.cn-n1.baidubce.com/v1/example/测试"
@@ -17,7 +15,7 @@ func TestGetURIPath(t *testing.T) {
 	path := GetURIPath(URI)
 
 	if path != expected {
-		t.Error(test.Format("GetURIPath", path, expected))
+		t.Error(FormatTest("GetURIPath", path, expected))
 	}
 }
 
@@ -27,7 +25,7 @@ func TestURIEncodeExceptSlash(t *testing.T) {
 	path = URIEncodeExceptSlash(path)
 
 	if path != expected {
-		t.Error(test.Format("URIEncodeExceptSlash", path, expected))
+		t.Error(FormatTest("URIEncodeExceptSlash", path, expected))
 	}
 }
 
@@ -36,7 +34,7 @@ func TestGetMD5(t *testing.T) {
 	result := GetMD5("baidubce-sdk-go", false)
 
 	if result != expected {
-		t.Error(test.Format("GetMD5", result, expected))
+		t.Error(FormatTest("GetMD5", result, expected))
 	}
 }
 
@@ -46,7 +44,7 @@ func TestTimeToUTCString(t *testing.T) {
 	utc := TimeToUTCString(datetime)
 
 	if utc != expected {
-		t.Error(test.Format("TimeToUTCString", utc, expected))
+		t.Error(FormatTest("TimeToUTCString", utc, expected))
 	}
 }
 
@@ -55,7 +53,7 @@ func TestTimeStringToRFC1123(t *testing.T) {
 	result := TimeStringToRFC1123("2015-11-16T07:33:15Z")
 
 	if result != expected {
-		t.Error(test.Format("TimeStringToRFC1123", result, expected))
+		t.Error(FormatTest("TimeStringToRFC1123", result, expected))
 	}
 }
 
@@ -65,14 +63,14 @@ func TestHostToURL(t *testing.T) {
 	url := HostToURL(host)
 
 	if url != expected {
-		t.Error(test.Format("HostToURL", url, expected))
+		t.Error(FormatTest("HostToURL", url, expected))
 	}
 
 	host = "http://bj.bcebos.com"
 	url = HostToURL(host)
 
 	if url != expected {
-		t.Error(test.Format("HostToURL", url, expected))
+		t.Error(FormatTest("HostToURL", url, expected))
 	}
 }
 
@@ -86,7 +84,7 @@ func TestToCanonicalQueryString(t *testing.T) {
 	encodedQueryString := ToCanonicalQueryString(params)
 
 	if encodedQueryString != expected {
-		t.Error(test.Format("ToCanonicalQueryString", encodedQueryString, expected))
+		t.Error(FormatTest("ToCanonicalQueryString", encodedQueryString, expected))
 	}
 }
 
@@ -102,7 +100,7 @@ func TestToCanonicalHeaderString(t *testing.T) {
 	canonicalHeader := ToCanonicalHeaderString(getHeaders())
 
 	if canonicalHeader != expected {
-		t.Error(test.Format("ToCanonicalHeaderString", canonicalHeader, expected))
+		t.Error(FormatTest("ToCanonicalHeaderString", canonicalHeader, expected))
 	}
 }
 
@@ -111,7 +109,7 @@ func TestURLEncode(t *testing.T) {
 	result := URLEncode("test-测试")
 
 	if result != expected {
-		t.Error(test.Format("URLEncode", result, expected))
+		t.Error(FormatTest("URLEncode", result, expected))
 	}
 }
 
@@ -123,7 +121,7 @@ func TestSliceToLower(t *testing.T) {
 	result := fmt.Sprintf("%s %s", arr[0], arr[1])
 
 	if result != expected {
-		t.Error(test.Format("SliceToLower", result, expected))
+		t.Error(FormatTest("SliceToLower", result, expected))
 	}
 }
 
@@ -143,7 +141,7 @@ func TestMapKeyToLower(t *testing.T) {
 	}
 
 	if result != expected {
-		t.Error(test.Format("MapKeyToLower", result, expected))
+		t.Error(FormatTest("MapKeyToLower", result, expected))
 	}
 }
 
@@ -157,13 +155,13 @@ func TestToMap(t *testing.T) {
 	m, err := ToMap(p, "Name", "Age")
 
 	if err != nil {
-		t.Error(test.Format("ToMap", err.Error(), "nil"))
+		t.Error(FormatTest("ToMap", err.Error(), "nil"))
 	} else {
 		expected := "guoyao:10"
 		result := fmt.Sprintf("%s:%v", m["Name"], m["Age"])
 
 		if result != expected {
-			t.Error(test.Format("ToMap", result, expected))
+			t.Error(FormatTest("ToMap", result, expected))
 		}
 	}
 }
@@ -178,13 +176,13 @@ func TestToJson(t *testing.T) {
 	byteArray, err := ToJson(p, "name", "age")
 
 	if err != nil {
-		t.Error(test.Format("ToMap", err.Error(), "nil"))
+		t.Error(FormatTest("ToMap", err.Error(), "nil"))
 	} else {
 		expected := "{\"age\":10,\"name\":\"guoyao\"}"
 		result := string(byteArray)
 
 		if result != expected {
-			t.Error(test.Format("ToMap", result, expected))
+			t.Error(FormatTest("ToMap", result, expected))
 		}
 	}
 }
@@ -194,7 +192,7 @@ func TestCheckFileExists(t *testing.T) {
 	result := CheckFileExists("util_test.go")
 
 	if result != expected {
-		t.Error(test.Format("CheckFileExists", strconv.FormatBool(result), strconv.FormatBool(expected)))
+		t.Error(FormatTest("CheckFileExists", strconv.FormatBool(result), strconv.FormatBool(expected)))
 	}
 }
 
