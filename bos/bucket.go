@@ -410,8 +410,8 @@ type ListPartsResponse struct {
 	Key                  string
 	UploadId             string
 	Initiated            time.Time
-	partNumberMarker     string
-	nextPartNumberMarker string
+	PartNumberMarker     int
+	NextPartNumberMarker int
 	MaxParts             int
 	IsTruncated          bool
 	Owner                BucketOwner

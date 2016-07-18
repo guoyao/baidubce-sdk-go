@@ -582,6 +582,7 @@ func multipartUpload() {
 	}
 
 	waitGroup.Wait()
+	return
 	waitGroup.Add(1)
 
 	go func() {
@@ -669,8 +670,9 @@ func abortMultipartUpload() {
 func listParts() {
 	bucketName := "baidubce-sdk-go"
 	objectKey := "examples/test-multipart-upload"
+	uploadId := "a977803dc94b8c9da2c9f1d8432a1805"
 
-	listPartsResponse, err := bosClient.ListParts(bucketName, objectKey, "4b17efee1a6abfcdab1c856afdc070c2", nil)
+	listPartsResponse, err := bosClient.ListParts(bucketName, objectKey, uploadId, nil)
 
 	if err != nil {
 		log.Println(err)

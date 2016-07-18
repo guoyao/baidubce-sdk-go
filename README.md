@@ -16,9 +16,7 @@ go get github.com/guoyao/baidubce-sdk-go
 Before run test, you should setup two environment variables: `BAIDU_BCE_AK` and `BAIDU_BCE_SK`
 
 ```
-go test github.com/guoyao/baidubce-sdk-go/bos
-go test github.com/guoyao/baidubce-sdk-go/bce
-go test github.com/guoyao/baidubce-sdk-go/util
+go test -v github.com/guoyao/baidubce-sdk-go/...
 ```
 
 ## Usage
