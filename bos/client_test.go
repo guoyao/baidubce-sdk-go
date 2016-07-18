@@ -6,7 +6,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"path"
 	"strconv"
 	"sync"
 	"testing"
@@ -513,21 +512,27 @@ func TestAppendObject(t *testing.T) {
 func TestMultipartUploadFromFile(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-multipart-upload-from-file-"
 	method := "MultipartUploadFromFile"
-	objectKey := "test-multipart-upload.zip"
+	objectKey := "test-multipart-upload"
 
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
-		pwd, err := os.Getwd()
+		file, err := util.TempFileWithSize(1024 * 1024 * 6)
+
+		defer func() {
+			if file != nil {
+				file.Close()
+				os.Remove(file.Name())
+			}
+		}()
 
 		if err != nil {
 			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
-		filePath := path.Join(pwd, "../", "examples", "test-multipart-upload.zip")
 		var partSize int64 = 1024 * 1024 * 2
 
 		completeMultipartUploadResponse, bceError := bosClient.MultipartUploadFromFile(bucketName,
-			objectKey, filePath, partSize)
+			objectKey, file.Name(), partSize)
 
 		if bceError != nil {
 			t.Error(util.FormatTest(method, bceError.Error(), "nil"))
@@ -540,7 +545,7 @@ func TestMultipartUploadFromFile(t *testing.T) {
 func TestAbortMultipartUpload(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-abort-multipart-upload-"
 	method := "AbortMultipartUpload"
-	objectKey := "test-multipart-upload.zip"
+	objectKey := "test-multipart-upload"
 
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
 		initiateMultipartUploadRequest := InitiateMultipartUploadRequest{
@@ -574,7 +579,7 @@ func TestAbortMultipartUpload(t *testing.T) {
 
 func TestListMultipartUploads(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-list-multipart-uploads-"
-	objectKey := "test-multipart-upload.zip"
+	objectKey := "test-multipart-upload"
 	method := "ListMultipartUploads"
 
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
@@ -623,7 +628,7 @@ func TestListMultipartUploads(t *testing.T) {
 
 func TestListParts(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-list-parts-"
-	objectKey := "test-list-parts.zip"
+	objectKey := "test-list-parts"
 	method := "ListParts"
 
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
@@ -655,17 +660,14 @@ func TestListParts(t *testing.T) {
 			}
 		}()
 
-		pwd, err := os.Getwd()
+		file, err := util.TempFileWithSize(1024 * 1024 * 6)
 
-		if err != nil {
-			t.Error(util.FormatTest(method, err.Error(), "nil"))
-			return
-		}
-
-		filePath := path.Join(pwd, "../", "examples", "test-multipart-upload.zip")
-		file, err := os.Open(filePath)
-
-		defer file.Close()
+		defer func() {
+			if file != nil {
+				file.Close()
+				os.Remove(file.Name())
+			}
+		}()
 
 		if err != nil {
 			t.Error(util.FormatTest(method, err.Error(), "nil"))

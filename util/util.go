@@ -29,10 +29,13 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
+
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 func GetURL(protocol, host, uriPath string, params map[string]string) string {
@@ -340,6 +343,51 @@ func CheckFileExists(filename string) bool {
 	}
 
 	return exist
+}
+
+func HomeDir() (string, error) {
+	return homedir.Dir()
+}
+
+func TempFileWithSize(fileSize int64) (*os.File, error) {
+	content := make([]byte, fileSize, fileSize)
+	return TempFile(content, "", "")
+}
+
+func TempFile(content []byte, dir, prefix string) (*os.File, error) {
+	if dir == "" {
+		home, err := HomeDir()
+
+		if err != nil {
+			return nil, err
+		}
+
+		dir = path.Join(home, "tmp")
+	}
+
+	if prefix == "" {
+		prefix = "temp"
+	}
+
+	tmpfile, err := ioutil.TempFile(dir, prefix)
+
+	if err != nil {
+		return tmpfile, err
+	}
+
+	if content != nil {
+		if _, err := tmpfile.Write(content); err != nil {
+			return tmpfile, err
+		}
+	}
+
+	_, err = tmpfile.Seek(0, 0)
+
+	if err != nil {
+		return tmpfile, err
+	}
+
+	return tmpfile, nil
 }
 
 // FormatTest returns a formatted string.
