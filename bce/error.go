@@ -7,6 +7,7 @@ import (
 
 // Error is a implementation of error.
 type Error struct {
+	StatusCode               int
 	Code, Message, RequestID string
 	Raw                      error
 }

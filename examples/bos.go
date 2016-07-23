@@ -540,7 +540,7 @@ func multipartUpload() {
 	var partCount int = int(math.Ceil(float64(totalSize) / float64(partSize)))
 
 	var waitGroup sync.WaitGroup
-	partETags := make([]bos.PartETag, 0, partCount)
+	parts := make([]bos.PartSummary, 0, partCount)
 
 	for i := 0; i < partCount; i++ {
 		var skipBytes int64 = partSize * int64(i)
@@ -566,7 +566,7 @@ func multipartUpload() {
 
 		waitGroup.Add(1)
 
-		partETags = append(partETags, bos.PartETag{PartNumber: partNumber})
+		parts = append(parts, bos.PartSummary{PartNumber: partNumber})
 
 		go func(partNumber int) {
 			defer waitGroup.Done()
@@ -577,12 +577,11 @@ func multipartUpload() {
 				panic(err)
 			}
 
-			partETags[partNumber-1].ETag = uploadPartResponse.GetETag()
+			parts[partNumber-1].ETag = uploadPartResponse.GetETag()
 		}(partNumber)
 	}
 
 	waitGroup.Wait()
-	return
 	waitGroup.Add(1)
 
 	go func() {
@@ -592,7 +591,7 @@ func multipartUpload() {
 			BucketName: bucketName,
 			ObjectKey:  objectKey,
 			UploadId:   uploadId,
-			Parts:      partETags,
+			Parts:      parts,
 		}
 
 		completeMultipartUploadResponse, err := bosClient.CompleteMultipartUpload(
@@ -772,6 +771,7 @@ func listMultipartUploadsFromRequest() {
 func RunBosExamples() {
 	listParts()
 	return
+	listParts()
 	listPartsFromRequest()
 	listMultipartUploads()
 	listMultipartUploadsFromRequest()

@@ -686,7 +686,7 @@ func TestListParts(t *testing.T) {
 		var partCount int = int(math.Ceil(float64(totalSize) / float64(partSize)))
 
 		var waitGroup sync.WaitGroup
-		partETags := make([]PartETag, 0, partCount)
+		parts := make([]PartSummary, 0, partCount)
 
 		for i := 0; i < partCount; i++ {
 			var skipBytes int64 = partSize * int64(i)
@@ -713,7 +713,7 @@ func TestListParts(t *testing.T) {
 
 			waitGroup.Add(1)
 
-			partETags = append(partETags, PartETag{PartNumber: partNumber})
+			parts = append(parts, PartSummary{PartNumber: partNumber})
 
 			go func(partNumber int) {
 				defer waitGroup.Done()
@@ -725,7 +725,7 @@ func TestListParts(t *testing.T) {
 					return
 				}
 
-				partETags[partNumber-1].ETag = uploadPartResponse.GetETag()
+				parts[partNumber-1].ETag = uploadPartResponse.GetETag()
 			}(partNumber)
 		}
 

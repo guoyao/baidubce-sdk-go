@@ -24,17 +24,19 @@ import (
 
 // Response holds an instance of type `http response`, and has some custom data and functions.
 type Response struct {
-	Body []byte
+	BodyContent []byte
 	*http.Response
 }
 
 // NewResponse returns an instance of type `Response`
-func NewResponse(res *http.Response, autoReadAllBytesFromBody bool) (*Response, error) {
-	response := &Response{Response: res}
+func NewResponse(res *http.Response) *Response {
+	return &Response{Response: res}
+}
 
-	if autoReadAllBytesFromBody {
+func (res *Response) GetBodyContent() ([]byte, error) {
+	if res.BodyContent == nil {
 		defer func() {
-			if res != nil {
+			if res.Response != nil {
 				res.Body.Close()
 			}
 		}()
@@ -45,8 +47,8 @@ func NewResponse(res *http.Response, autoReadAllBytesFromBody bool) (*Response, 
 			return nil, err
 		}
 
-		response.Body = body
+		res.BodyContent = body
 	}
 
-	return response, nil
+	return res.BodyContent, nil
 }

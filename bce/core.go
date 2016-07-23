@@ -19,7 +19,6 @@ package bce
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -257,8 +256,7 @@ func (c *Client) GetURL(host, uriPath string, params map[string]string) string {
 }
 
 // SendRequest sends a http request to the endpoint of baidubce api.
-func (c *Client) SendRequest(req *Request, option *SignOption,
-	autoReadAllBytesFromResponseBody bool) (*Response, *Error) {
+func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Error) {
 
 	if option == nil {
 		option = &SignOption{}
@@ -313,24 +311,24 @@ func (c *Client) SendRequest(req *Request, option *SignOption,
 		return nil, NewError(err)
 	}
 
-	bceResponse, err := NewResponse(res, autoReadAllBytesFromResponseBody)
+	bceResponse := NewResponse(res)
 
-	if err != nil {
-		return nil, NewError(err)
-	}
+	if res.StatusCode >= http.StatusBadRequest {
+		bodyContent, err := bceResponse.GetBodyContent()
 
-	if res.StatusCode >= 400 {
-		if bceResponse.Body == nil {
-			body, err := ioutil.ReadAll(bceResponse.Response.Body)
+		var bceError *Error
 
-			if err != nil {
-				return nil, NewError(err)
-			}
-
-			bceResponse.Body = body
+		if err != nil {
+			bceError = NewError(err)
 		}
 
-		return bceResponse, NewErrorFromJSON(bceResponse.Body)
+		if bceError != nil {
+			bceError = NewErrorFromJSON(bodyContent)
+		}
+
+		bceError.StatusCode = res.StatusCode
+
+		return bceResponse, bceError
 	}
 
 	return bceResponse, nil

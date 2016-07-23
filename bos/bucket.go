@@ -187,7 +187,7 @@ type ObjectSummary struct {
 	Key          string
 	LastModified string
 	ETag         string
-	Size         uint
+	Size         int64
 	Owner        BucketOwner
 }
 
@@ -327,28 +327,9 @@ func (res UploadPartResponse) GetETag() string {
 	return strings.Replace(res.Get("Etag"), "\"", "", -1)
 }
 
-type PartETag struct {
-	PartNumber int    `json:"partNumber"`
-	ETag       string `json:"eTag"`
-}
-
-type PartETagSlice []PartETag
-
-func (partETagSlice PartETagSlice) Len() int {
-	return len(partETagSlice)
-}
-
-func (partETagSlice PartETagSlice) Swap(i, j int) {
-	partETagSlice[i], partETagSlice[j] = partETagSlice[j], partETagSlice[i]
-}
-
-func (partETagSlice PartETagSlice) Less(i, j int) bool {
-	return partETagSlice[i].PartNumber < partETagSlice[j].PartNumber
-}
-
 type CompleteMultipartUploadRequest struct {
 	BucketName, ObjectKey, UploadId string
-	Parts                           []PartETag `json:"parts"`
+	Parts                           []PartSummary `json:"parts"`
 }
 
 type CompleteMultipartUploadResponse struct {
@@ -399,9 +380,9 @@ type ListPartsRequest struct {
 }
 
 type PartSummary struct {
-	PartNumber   int
+	PartNumber   int    `json:"partNumber"`
+	ETag         string `json:"eTag"`
 	LastModified time.Time
-	ETag         string
 	Size         int64
 }
 
