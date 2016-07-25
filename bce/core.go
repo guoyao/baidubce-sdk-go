@@ -237,10 +237,53 @@ func GenerateAuthorization(credentials Credentials, req Request, option *SignOpt
 // Client is the base client struct for all products of baidubce.
 type Client struct {
 	*Config
+	httpClient *http.Client
 }
 
 func NewClient(config *Config) *Client {
-	return &Client{config}
+	return &Client{config, newHttpClient(config)}
+}
+
+func newHttpClient(config *Config) *http.Client {
+	transport := new(http.Transport)
+
+	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
+		transport.Proxy = defaultTransport.Proxy
+		transport.Dial = defaultTransport.Dial
+		transport.TLSHandshakeTimeout = defaultTransport.TLSHandshakeTimeout
+		transport.ExpectContinueTimeout = defaultTransport.ExpectContinueTimeout
+	}
+
+	if config.ProxyHost != "" {
+		host := config.ProxyHost
+
+		if config.ProxyPort > 0 {
+			host += ":" + strconv.Itoa(config.ProxyPort)
+		}
+
+		proxyUrl, err := url.Parse(util.HostToURL(host, "http"))
+
+		if err != nil {
+			panic(err)
+		}
+
+		transport.Proxy = http.ProxyURL(proxyUrl)
+	}
+
+	/*
+		if c.ConnectionTimeout > 0 {
+			transport.TLSHandshakeTimeout = c.ConnectionTimeout
+		}
+	*/
+
+	if config.MaxConnections > 0 {
+		transport.MaxIdleConnsPerHost = config.MaxConnections
+	}
+
+	return &http.Client{
+		Transport: transport,
+		Timeout:   config.Timeout,
+	}
 }
 
 func (c *Client) GetURL(host, uriPath string, params map[string]string) string {
@@ -257,7 +300,6 @@ func (c *Client) GetURL(host, uriPath string, params map[string]string) string {
 
 // SendRequest sends a http request to the endpoint of baidubce api.
 func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Error) {
-
 	if option == nil {
 		option = &SignOption{}
 	}
@@ -265,47 +307,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Erro
 	option.AddHeader("User-Agent", c.GetUserAgent())
 	GenerateAuthorization(*c.Credentials, *req, option)
 
-	transport := new(http.Transport)
-
-	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
-		transport.Proxy = defaultTransport.Proxy
-		transport.Dial = defaultTransport.Dial
-		transport.TLSHandshakeTimeout = defaultTransport.TLSHandshakeTimeout
-		transport.ExpectContinueTimeout = defaultTransport.ExpectContinueTimeout
-	}
-
-	if c.ProxyHost != "" {
-		host := c.ProxyHost
-
-		if c.ProxyPort > 0 {
-			host += ":" + strconv.Itoa(c.ProxyPort)
-		}
-
-		proxyUrl, err := url.Parse(util.HostToURL(host, "http"))
-
-		if err != nil {
-			return nil, NewError(err)
-		}
-
-		transport.Proxy = http.ProxyURL(proxyUrl)
-	}
-
-	/*
-		if c.ConnectionTimeout > 0 {
-			transport.TLSHandshakeTimeout = c.ConnectionTimeout
-		}
-	*/
-
-	if c.MaxConnections > 0 {
-		transport.MaxIdleConnsPerHost = c.MaxConnections
-	}
-
-	httpClient := http.Client{
-		Transport: transport,
-		Timeout:   c.Timeout,
-	}
-
-	res, err := httpClient.Do(req.raw())
+	res, err := c.httpClient.Do(req.raw())
 
 	if err != nil {
 		return nil, NewError(err)
