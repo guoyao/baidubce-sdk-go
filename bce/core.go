@@ -322,7 +322,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Erro
 			bceError = NewError(err)
 		}
 
-		if bceError != nil {
+		if bceError == nil {
 			bceError = NewErrorFromJSON(bodyContent)
 		}
 
