@@ -238,10 +238,15 @@ func GenerateAuthorization(credentials Credentials, req Request, option *SignOpt
 type Client struct {
 	*Config
 	httpClient *http.Client
+	debug      bool
 }
 
 func NewClient(config *Config) *Client {
-	return &Client{config, newHttpClient(config)}
+	return &Client{config, newHttpClient(config), false}
+}
+
+func (c *Client) SetDebug(debug bool) {
+	c.debug = debug
 }
 
 func newHttpClient(config *Config) *http.Client {
@@ -307,10 +312,20 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Erro
 	option.AddHeader("User-Agent", c.GetUserAgent())
 	GenerateAuthorization(*c.Credentials, *req, option)
 
+	if c.debug {
+		util.Debug("request info", fmt.Sprintf("httpMethod = %s, requestUrl = %s, options = %v",
+			req.Method, req.URL.String(), option))
+	}
+
 	res, err := c.httpClient.Do(req.raw())
 
 	if err != nil {
 		return nil, NewError(err)
+	}
+
+	if c.debug {
+		util.Debug("response info", fmt.Sprintf("httpMethod = %s, requestUrl = %s, status code = %d",
+			req.Method, req.URL.String(), res.StatusCode))
 	}
 
 	bceResponse := NewResponse(res)

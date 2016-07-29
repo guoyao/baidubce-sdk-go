@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"os"
 	"path"
@@ -388,6 +389,18 @@ func TempFile(content []byte, dir, prefix string) (*os.File, error) {
 	}
 
 	return tmpfile, nil
+}
+
+func Debug(title, message string) {
+	if title != "" {
+		log.Println("----------------------------DEBUG: start of " + title + "----------------------------")
+	}
+
+	log.Println(message)
+
+	if title != "" {
+		log.Println("----------------------------DEBUG: end of " + title + "------------------------------\n")
+	}
 }
 
 // FormatTest returns a formatted string.

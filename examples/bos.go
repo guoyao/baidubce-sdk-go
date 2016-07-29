@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"sync"
 	//"time"
 
 	"github.com/guoyao/baidubce-sdk-go/bce"
@@ -20,6 +19,8 @@ var bosConfig = bos.NewConfig(bceConfig)
 var bosClient = bos.NewClient(bosConfig)
 
 func init() {
+	bosClient.SetDebug(true)
+
 	/*
 		bceConfig.Endpoint = "baidubce-sdk-go.bj.bcebos.com"
 		bceConfig.ProxyHost = "agent.baidu.com"
@@ -539,7 +540,6 @@ func multipartUpload() {
 	var totalSize int64 = fileInfo.Size()
 	var partCount int = int(math.Ceil(float64(totalSize) / float64(partSize)))
 
-	var waitGroup sync.WaitGroup
 	parts := make([]bos.PartSummary, 0, partCount)
 
 	for i := 0; i < partCount; i++ {
@@ -564,47 +564,32 @@ func multipartUpload() {
 			PartData:   byteArray,
 		}
 
-		waitGroup.Add(1)
-
 		parts = append(parts, bos.PartSummary{PartNumber: partNumber})
 
-		go func(partNumber int) {
-			defer waitGroup.Done()
+		uploadPartResponse, bceError := bosClient.UploadPart(uploadPartRequest, nil)
 
-			uploadPartResponse, err := bosClient.UploadPart(uploadPartRequest, nil)
+		if bceError != nil {
+			panic(bceError)
+		}
 
-			if err != nil {
-				panic(err)
-			}
-
-			parts[partNumber-1].ETag = uploadPartResponse.GetETag()
-		}(partNumber)
+		parts[partNumber-1].ETag = uploadPartResponse.GetETag()
 	}
 
-	waitGroup.Wait()
-	waitGroup.Add(1)
+	completeMultipartUploadRequest := bos.CompleteMultipartUploadRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+		UploadId:   uploadId,
+		Parts:      parts,
+	}
 
-	go func() {
-		defer waitGroup.Done()
+	completeMultipartUploadResponse, bceError := bosClient.CompleteMultipartUpload(
+		completeMultipartUploadRequest, nil)
 
-		completeMultipartUploadRequest := bos.CompleteMultipartUploadRequest{
-			BucketName: bucketName,
-			ObjectKey:  objectKey,
-			UploadId:   uploadId,
-			Parts:      parts,
-		}
+	if bceError != nil {
+		panic(bceError)
+	}
 
-		completeMultipartUploadResponse, err := bosClient.CompleteMultipartUpload(
-			completeMultipartUploadRequest, nil)
-
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(completeMultipartUploadResponse.ETag)
-	}()
-
-	waitGroup.Wait()
+	fmt.Println(completeMultipartUploadResponse.ETag)
 }
 
 func multipartUploadFromFile() {

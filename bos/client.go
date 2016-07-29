@@ -884,10 +884,10 @@ func (c *Client) MultipartUploadFromFile(bucketName, objectKey, filePath string,
 		go func(partNumber int) {
 			defer waitGroup.Done()
 
-			uploadPartResponse, err := c.UploadPart(uploadPartRequest, nil)
+			uploadPartResponse, bceError := c.UploadPart(uploadPartRequest, nil)
 
-			if err != nil {
-				panic(err)
+			if bceError != nil {
+				panic(bceError)
 			}
 
 			parts[partNumber-1].ETag = uploadPartResponse.GetETag()
@@ -909,10 +909,10 @@ func (c *Client) MultipartUploadFromFile(bucketName, objectKey, filePath string,
 			Parts:      parts,
 		}
 
-		completeResponse, err := c.CompleteMultipartUpload(completeMultipartUploadRequest, nil)
+		completeResponse, bceError := c.CompleteMultipartUpload(completeMultipartUploadRequest, nil)
 
-		if err != nil {
-			panic(err)
+		if bceError != nil {
+			panic(bceError)
 		}
 
 		completeMultipartUploadResponse = completeResponse
