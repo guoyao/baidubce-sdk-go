@@ -651,6 +651,29 @@ func abortMultipartUpload() {
 	}
 }
 
+func abortAllMultipartUpload(bucketName string) {
+	listMultipartUploadsResponse, bceError := bosClient.ListMultipartUploads(bucketName, nil)
+
+	if bceError != nil {
+		log.Println(bceError)
+		return
+	}
+
+	for _, multipartUploadSummary := range listMultipartUploadsResponse.Uploads {
+		abortMultipartUploadRequest := bos.AbortMultipartUploadRequest{
+			BucketName: bucketName,
+			ObjectKey:  multipartUploadSummary.Key,
+			UploadId:   multipartUploadSummary.UploadId,
+		}
+
+		bceError = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+
+		if bceError != nil {
+			log.Println(bceError)
+		}
+	}
+}
+
 func listParts() {
 	bucketName := "baidubce-sdk-go"
 	objectKey := "examples/test-multipart-upload"
@@ -754,7 +777,8 @@ func listMultipartUploadsFromRequest() {
 }
 
 func RunBosExamples() {
-	listParts()
+	abortAllMultipartUpload("docker-registry-me-test")
+	//listParts()
 	return
 	listParts()
 	listPartsFromRequest()
