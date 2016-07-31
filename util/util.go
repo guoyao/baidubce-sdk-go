@@ -370,6 +370,14 @@ func TempFile(content []byte, dir, prefix string) (*os.File, error) {
 		prefix = "temp"
 	}
 
+	if !CheckFileExists(dir) {
+		err := os.MkdirAll(dir, 0644)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	tmpfile, err := ioutil.TempFile(dir, prefix)
 
 	if err != nil {

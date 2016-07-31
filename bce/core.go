@@ -313,7 +313,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Erro
 	GenerateAuthorization(*c.Credentials, *req, option)
 
 	if c.debug {
-		util.Debug("request info", fmt.Sprintf("httpMethod = %s, requestUrl = %s, options = %v",
+		util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, options = %v",
 			req.Method, req.URL.String(), option))
 	}
 
@@ -324,7 +324,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Erro
 	}
 
 	if c.debug {
-		util.Debug("response info", fmt.Sprintf("httpMethod = %s, requestUrl = %s, status code = %d",
+		util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, status code = %d",
 			req.Method, req.URL.String(), res.StatusCode))
 	}
 
