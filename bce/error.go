@@ -3,6 +3,7 @@ package bce
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 // Error is a implementation of error.
@@ -13,11 +14,7 @@ type Error struct {
 }
 
 func (err *Error) Error() string {
-	if err.Message != "" {
-		return err.Message
-	}
-
-	return err.Code
+	return fmt.Sprintf("Error Message: \"%s\", Error Code: \"%s\", Status Code: %d, Request Id: \"%s\"", err.Message, err.Code, err.StatusCode, err.RequestID)
 }
 
 func NewError(err error) *Error {
