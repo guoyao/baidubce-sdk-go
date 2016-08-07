@@ -120,17 +120,16 @@ func PutObject() {
 ### MultipartUpload
 
 ```go
-func MultipartUpload() {
+func multipartUpload() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "test-multipart-upload.zip"
+	objectKey := "examples/test-multipart-upload"
 
 	initiateMultipartUploadRequest := bos.InitiateMultipartUploadRequest{
 		BucketName: bucketName,
 		ObjectKey:  objectKey,
 	}
 
-	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(
-        initiateMultipartUploadRequest, nil)
+	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
 	if bceError != nil {
 		panic(bceError)
@@ -138,33 +137,30 @@ func MultipartUpload() {
 
 	uploadId := initiateMultipartUploadResponse.UploadId
 
-	pwd, err := os.Getwd()
+	file, err := util.TempFileWithSize(1024 * 1024 * 6)
+
+	defer func() {
+		if file != nil {
+			file.Close()
+			os.Remove(file.Name())
+		}
+	}()
 
 	if err != nil {
-		panic(err)
-	}
-
-	filePath := path.Join(pwd, "baidubce", "examples", objectKey)
-	file, err := os.Open(filePath)
-
-	defer file.Close()
-
-	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	fileInfo, err := file.Stat()
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	var partSize int64 = 1024 * 1024 * 5
 	var totalSize int64 = fileInfo.Size()
 	var partCount int = int(math.Ceil(float64(totalSize) / float64(partSize)))
 
-	var waitGroup sync.WaitGroup
-	partETags := make([]bos.PartETag, 0, partCount)
+	parts := make([]bos.PartSummary, 0, partCount)
 
 	for i := 0; i < partCount; i++ {
 		var skipBytes int64 = partSize * int64(i)
@@ -188,47 +184,32 @@ func MultipartUpload() {
 			PartData:   byteArray,
 		}
 
-		waitGroup.Add(1)
+		parts = append(parts, bos.PartSummary{PartNumber: partNumber})
 
-		partETags = append(partETags, bos.PartETag{PartNumber: partNumber})
+		uploadPartResponse, bceError := bosClient.UploadPart(uploadPartRequest, nil)
 
-		go func(partNumber int) {
-			defer waitGroup.Done()
+		if bceError != nil {
+			panic(bceError)
+		}
 
-			uploadPartResponse, err := bosClient.UploadPart(uploadPartRequest, nil)
-
-			if err != nil {
-				panic(err)
-			}
-
-			partETags[partNumber-1].ETag = uploadPartResponse.GetETag()
-		}(partNumber)
+		parts[partNumber-1].ETag = uploadPartResponse.GetETag()
 	}
 
-	waitGroup.Wait()
-	waitGroup.Add(1)
+	completeMultipartUploadRequest := bos.CompleteMultipartUploadRequest{
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+		UploadId:   uploadId,
+		Parts:      parts,
+	}
 
-	go func() {
-		defer waitGroup.Done()
+	completeMultipartUploadResponse, bceError := bosClient.CompleteMultipartUpload(
+		completeMultipartUploadRequest, nil)
 
-		completeMultipartUploadRequest := bos.CompleteMultipartUploadRequest{
-			BucketName: bucketName,
-			ObjectKey:  objectKey,
-			UploadId:   uploadId,
-			Parts:      partETags,
-		}
+	if bceError != nil {
+		panic(bceError)
+	}
 
-		completeMultipartUploadResponse, err := bosClient.CompleteMultipartUpload(
-			completeMultipartUploadRequest, nil)
-
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(completeMultipartUploadResponse.ETag)
-	}()
-
-	waitGroup.Wait()
+	fmt.Println(completeMultipartUploadResponse.ETag)
 }
 ```
 
