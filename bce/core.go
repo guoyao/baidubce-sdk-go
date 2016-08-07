@@ -19,6 +19,7 @@ package bce
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -72,6 +73,7 @@ type Config struct {
 	//ConnectionTimeoutInMillis time.Duration // default value: 10 * time.Second in http.DefaultTransport
 	MaxConnections int           // default value: 2 in http.DefaultMaxIdleConnsPerHost
 	Timeout        time.Duration // default value: 0 in http.Client
+	RetryPolicy    RetryPolicy
 }
 
 func NewConfig(credentials *Credentials) *Config {
@@ -101,6 +103,61 @@ func (config *Config) GetUserAgent() string {
 	return userAgent
 }
 
+type RetryPolicy interface {
+	GetMaxErrorRetry() int
+	GetMaxDelay() time.Duration
+	GetDelayBeforeNextRetry(bceError *Error, retriesAttempted int) time.Duration
+}
+
+type DefaultRetryPolicy struct {
+	MaxErrorRetry int
+	MaxDelay      time.Duration
+}
+
+func NewDefaultRetryPolicy(maxErrorRetry int, maxDelay time.Duration) *DefaultRetryPolicy {
+	return &DefaultRetryPolicy{maxErrorRetry, maxDelay}
+}
+
+func (policy *DefaultRetryPolicy) GetMaxErrorRetry() int {
+	return policy.MaxErrorRetry
+}
+
+func (policy *DefaultRetryPolicy) GetMaxDelay() time.Duration {
+	return policy.MaxDelay
+}
+
+func (policy *DefaultRetryPolicy) GetDelayBeforeNextRetry(bceError *Error, retriesAttempted int) time.Duration {
+	if !policy.shouldRetry(bceError, retriesAttempted) {
+		return -1
+	}
+
+	duration := (1 << uint(retriesAttempted)) * 300 * time.Millisecond
+
+	if duration > policy.GetMaxDelay() {
+		return policy.GetMaxDelay()
+	}
+
+	return duration
+}
+
+func (policy *DefaultRetryPolicy) shouldRetry(bceError *Error, retriesAttempted int) bool {
+	if retriesAttempted > policy.GetMaxErrorRetry() {
+		return false
+	}
+
+	if bceError.StatusCode == http.StatusInternalServerError {
+		log.Println("Retry for internal server error.")
+		return true
+	}
+
+	if bceError.StatusCode == http.StatusServiceUnavailable {
+		log.Println("Retry for service unavailable.")
+		return true
+	}
+
+	return false
+}
+
 // SignOption contains options for signature of baidubce api.
 type SignOption struct {
 	Timestamp                 string
@@ -108,6 +165,7 @@ type SignOption struct {
 	Headers                   map[string]string
 	HeadersToSign             []string
 	headersToSignSpecified    bool
+	initialized               bool
 }
 
 // NewSignOption is the instance factory for `SignOption`.
@@ -115,7 +173,7 @@ func NewSignOption(timestamp string, expirationPeriodInSeconds int,
 	headers map[string]string, headersToSign []string) *SignOption {
 
 	return &SignOption{timestamp, expirationPeriodInSeconds,
-		headers, headersToSign, len(headersToSign) > 0}
+		headers, headersToSign, len(headersToSign) > 0, false}
 }
 
 func CheckSignOption(option *SignOption) *SignOption {
@@ -179,7 +237,10 @@ func (option *SignOption) init() {
 		util.MapKeyToLower(option.Headers)
 	}
 
-	option.headersToSignSpecified = len(option.HeadersToSign) > 0
+	if !option.initialized {
+		option.headersToSignSpecified = len(option.HeadersToSign) > 0
+	}
+
 	util.SliceToLower(option.HeadersToSign)
 
 	if !util.Contains(option.HeadersToSign, "host", true) {
@@ -200,6 +261,8 @@ func (option *SignOption) init() {
 			option.Headers["x-bce-date"] = option.Timestamp
 		}
 	}
+
+	option.initialized = true
 }
 
 func (option *SignOption) signedHeadersToString() string {
@@ -229,7 +292,7 @@ func GenerateAuthorization(credentials Credentials, req Request, option *SignOpt
 	signature := sign(credentials, req, option)
 	authorization += "/" + option.signedHeadersToString() + "/" + signature
 
-	req.addHeader("Authorization", authorization)
+	req.setHeader("Authorization", authorization)
 
 	return authorization
 }
@@ -304,51 +367,66 @@ func (c *Client) GetURL(host, uriPath string, params map[string]string) string {
 }
 
 // SendRequest sends a http request to the endpoint of baidubce api.
-func (c *Client) SendRequest(req *Request, option *SignOption) (*Response, *Error) {
+func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Response, bceError *Error) {
 	if option == nil {
 		option = &SignOption{}
 	}
 
 	option.AddHeader("User-Agent", c.GetUserAgent())
-	GenerateAuthorization(*c.Credentials, *req, option)
 
-	if c.debug {
-		util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, options = %v",
-			req.Method, req.URL.String(), option))
+	if c.RetryPolicy == nil {
+		c.RetryPolicy = NewDefaultRetryPolicy(3, 20*time.Second)
 	}
 
-	res, err := c.httpClient.Do(req.raw())
+	for i := 0; ; i++ {
+		bceResponse, bceError = nil, nil
 
-	if err != nil {
-		return nil, NewError(err)
-	}
+		GenerateAuthorization(*c.Credentials, *req, option)
 
-	if c.debug {
-		util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, status code = %d",
-			req.Method, req.URL.String(), res.StatusCode))
-	}
+		if c.debug {
+			util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, options = %v",
+				req.Method, req.URL.String(), option))
+		}
 
-	bceResponse := NewResponse(res)
-
-	if res.StatusCode >= http.StatusBadRequest {
-		bodyContent, err := bceResponse.GetBodyContent()
-
-		var bceError *Error
+		res, err := c.httpClient.Do(req.raw())
 
 		if err != nil {
-			bceError = NewError(err)
+			continue
+		}
+
+		if c.debug {
+			util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, status code = %d",
+				req.Method, req.URL.String(), res.StatusCode))
+		}
+
+		bceResponse = NewResponse(res)
+
+		if res.StatusCode >= http.StatusBadRequest {
+			bodyContent, err := bceResponse.GetBodyContent()
+
+			if err != nil {
+				bceError = NewError(err)
+			}
+
+			if bceError == nil {
+				bceError = NewErrorFromJSON(bodyContent)
+			}
+
+			bceError.StatusCode = res.StatusCode
 		}
 
 		if bceError == nil {
-			bceError = NewErrorFromJSON(bodyContent)
+			return
 		}
 
-		bceError.StatusCode = res.StatusCode
+		duration := c.RetryPolicy.GetDelayBeforeNextRetry(bceError, i+1)
 
-		return bceResponse, bceError
+		if duration <= 0 {
+			return
+		}
+
+		time.Sleep(duration)
 	}
-
-	return bceResponse, nil
 }
 
 func generateHeaderValidCompareFunc(headerKey string) func(string, string) bool {

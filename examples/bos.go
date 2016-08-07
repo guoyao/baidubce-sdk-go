@@ -777,9 +777,9 @@ func listMultipartUploadsFromRequest() {
 }
 
 func RunBosExamples() {
-	abortAllMultipartUpload("docker-registry-me-test")
-	//listParts()
+	listParts()
 	return
+	//abortAllMultipartUpload("docker-registry-me-test")
 	listParts()
 	listPartsFromRequest()
 	listMultipartUploads()

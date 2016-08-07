@@ -56,6 +56,13 @@ func (req *Request) addHeader(key, value string) {
 	req.Header.Add(key, value)
 }
 
+// Set headers to http request
+func (req *Request) SetHeaders(headerMap map[string]string) {
+	for key, value := range headerMap {
+		req.setHeader(key, value)
+	}
+}
+
 func (req *Request) setHeader(key, value string) {
 	req.Header.Set(key, value)
 }
@@ -68,7 +75,7 @@ func (req *Request) clearHeaders() {
 }
 
 func (req *Request) prepareHeaders(option *SignOption) {
-	req.AddHeaders(option.Headers)
+	req.SetHeaders(option.Headers)
 
 	if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("host")) {
 		option.Headers["host"] = req.URL.Host
