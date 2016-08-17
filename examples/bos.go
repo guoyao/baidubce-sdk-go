@@ -14,7 +14,12 @@ import (
 )
 
 var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK"))
-var bceConfig = bce.NewConfig(credentials)
+
+//var bceConfig = bce.NewConfig(credentials)
+var bceConfig = &bce.Config{
+	Credentials: credentials,
+	Checksum:    true,
+}
 var bosConfig = bos.NewConfig(bceConfig)
 var bosClient = bos.NewClient(bosConfig)
 
@@ -184,6 +189,8 @@ func putObject() {
 	} else {
 		fmt.Println(putObjectResponse.GetETag())
 	}
+
+	return
 
 	/*------------------ put object from bytes --------------------*/
 	objectKey = "examples/put-object-from-bytes"

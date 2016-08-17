@@ -108,6 +108,31 @@ func GetMD5(data interface{}, base64Encode bool) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
+func GetSha256(data interface{}) string {
+	var byteArray []byte
+
+	if str, ok := data.(string); ok {
+		byteArray = []byte(str)
+	} else if bs, ok := data.([]byte); ok {
+		byteArray = bs
+	} else if reader, ok := data.(io.Reader); ok {
+		bs, err := ioutil.ReadAll(reader)
+
+		if err != nil {
+			panic(err)
+		}
+
+		byteArray = bs
+	} else {
+		panic("data type should be string or []byte or io.Reader.")
+	}
+
+	hash := sha256.New()
+	hash.Write(byteArray)
+
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
 func Base64Encode(data []byte) string {
 	return base64.StdEncoding.EncodeToString(data)
 }

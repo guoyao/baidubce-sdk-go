@@ -74,6 +74,7 @@ type Config struct {
 	MaxConnections int           // default value: 2 in http.DefaultMaxIdleConnsPerHost
 	Timeout        time.Duration // default value: 0 in http.Client
 	RetryPolicy    RetryPolicy
+	Checksum       bool
 }
 
 func NewConfig(credentials *Credentials) *Config {
@@ -384,8 +385,8 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Res
 		GenerateAuthorization(*c.Credentials, *req, option)
 
 		if c.debug {
-			util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, options = %v",
-				req.Method, req.URL.String(), option))
+			util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, requestHeader = %v",
+				req.Method, req.URL.String(), req.Header))
 		}
 
 		res, err := c.httpClient.Do(req.raw())

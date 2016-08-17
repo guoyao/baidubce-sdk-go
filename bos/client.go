@@ -301,6 +301,10 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{},
 	option.AddHeadersToSign("date")
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
+	if c.Checksum {
+		option.AddHeader("x-bce-content-sha256", util.GetSha256(data))
+	}
+
 	if metadata != nil {
 		metadata.mergeToSignOption(option)
 	}
@@ -657,6 +661,10 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 	option = bce.CheckSignOption(option)
 	option.AddHeadersToSign("date")
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
+
+	if c.Checksum {
+		option.AddHeader("x-bce-content-sha256", util.GetSha256(data))
+	}
 
 	if metadata != nil {
 		metadata.mergeToSignOption(option)

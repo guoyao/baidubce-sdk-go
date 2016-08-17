@@ -16,7 +16,12 @@ import (
 )
 
 var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK"))
-var bceConfig = bce.NewConfig(credentials)
+
+//var bceConfig = bce.NewConfig(credentials)
+var bceConfig = &bce.Config{
+	Credentials: credentials,
+	Checksum:    true,
+}
 var bosConfig = NewConfig(bceConfig)
 var bosClient = NewClient(bosConfig)
 
