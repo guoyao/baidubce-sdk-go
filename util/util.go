@@ -18,6 +18,7 @@
 package util
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
@@ -80,26 +81,23 @@ func HmacSha256Hex(key, message string) string {
 }
 
 func GetMD5(data interface{}, base64Encode bool) string {
-	var byteArray []byte
+	hash := md5.New()
 
 	if str, ok := data.(string); ok {
-		byteArray = []byte(str)
-	} else if bs, ok := data.([]byte); ok {
-		byteArray = bs
+		io.Copy(hash, strings.NewReader(str))
+	} else if byteArray, ok := data.([]byte); ok {
+		io.Copy(hash, bytes.NewReader(byteArray))
 	} else if reader, ok := data.(io.Reader); ok {
-		bs, err := ioutil.ReadAll(reader)
-
-		if err != nil {
-			panic(err)
+		if f, ok := data.(io.Seeker); ok {
+			f.Seek(0, 0)
+			io.Copy(hash, reader)
+			f.Seek(0, 0)
+		} else {
+			io.Copy(hash, reader)
 		}
-
-		byteArray = bs
 	} else {
 		panic("data type should be string or []byte or io.Reader.")
 	}
-
-	hash := md5.New()
-	hash.Write(byteArray)
 
 	if base64Encode {
 		return Base64Encode(hash.Sum(nil))
@@ -109,26 +107,23 @@ func GetMD5(data interface{}, base64Encode bool) string {
 }
 
 func GetSha256(data interface{}) string {
-	var byteArray []byte
+	hash := sha256.New()
 
 	if str, ok := data.(string); ok {
-		byteArray = []byte(str)
-	} else if bs, ok := data.([]byte); ok {
-		byteArray = bs
+		io.Copy(hash, strings.NewReader(str))
+	} else if byteArray, ok := data.([]byte); ok {
+		io.Copy(hash, bytes.NewReader(byteArray))
 	} else if reader, ok := data.(io.Reader); ok {
-		bs, err := ioutil.ReadAll(reader)
-
-		if err != nil {
-			panic(err)
+		if f, ok := data.(io.Seeker); ok {
+			f.Seek(0, 0)
+			io.Copy(hash, reader)
+			f.Seek(0, 0)
+		} else {
+			io.Copy(hash, reader)
 		}
-
-		byteArray = bs
 	} else {
 		panic("data type should be string or []byte or io.Reader.")
 	}
-
-	hash := sha256.New()
-	hash.Write(byteArray)
 
 	return hex.EncodeToString(hash.Sum(nil))
 }
@@ -376,8 +371,17 @@ func HomeDir() (string, error) {
 }
 
 func TempFileWithSize(fileSize int64) (*os.File, error) {
-	content := make([]byte, fileSize, fileSize)
-	return TempFile(content, "", "")
+	f, err := TempFile(nil, "", "")
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = f.Truncate(fileSize); err != nil {
+		return nil, err
+	}
+
+	return f, nil
 }
 
 func TempFile(content []byte, dir, prefix string) (*os.File, error) {
@@ -406,19 +410,19 @@ func TempFile(content []byte, dir, prefix string) (*os.File, error) {
 	tmpfile, err := ioutil.TempFile(dir, prefix)
 
 	if err != nil {
-		return tmpfile, err
+		return nil, err
 	}
 
 	if content != nil {
 		if _, err := tmpfile.Write(content); err != nil {
-			return tmpfile, err
+			return nil, err
 		}
 	}
 
 	_, err = tmpfile.Seek(0, 0)
 
 	if err != nil {
-		return tmpfile, err
+		return nil, err
 	}
 
 	return tmpfile, nil
