@@ -2,6 +2,7 @@ package bos
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -665,19 +666,21 @@ func TestListParts(t *testing.T) {
 			}
 		}()
 
+		files := make([]*os.File, 0)
 		file, err := util.TempFileWithSize(1024 * 1024 * 6)
-
-		defer func() {
-			if file != nil {
-				file.Close()
-				os.Remove(file.Name())
-			}
-		}()
+		files = append(files, file)
 
 		if err != nil {
 			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
+
+		defer func() {
+			for _, f := range files {
+				f.Close()
+				os.Remove(f.Name())
+			}
+		}()
 
 		fileInfo, err := file.Stat()
 
@@ -697,8 +700,16 @@ func TestListParts(t *testing.T) {
 			var skipBytes int64 = partSize * int64(i)
 			var size int64 = int64(math.Min(float64(totalSize-skipBytes), float64(partSize)))
 
-			byteArray := make([]byte, size, size)
-			_, err := file.Read(byteArray)
+			tempFile, err := util.TempFile(nil, "", "")
+			files = append(files, tempFile)
+
+			if err != nil {
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
+				return
+			}
+
+			limitReader := io.LimitReader(file, size)
+			_, err = io.Copy(tempFile, limitReader)
 
 			if err != nil {
 				t.Error(util.FormatTest(method, err.Error(), "nil"))
@@ -713,7 +724,7 @@ func TestListParts(t *testing.T) {
 				UploadId:   initiateMultipartUploadResponse.UploadId,
 				PartSize:   size,
 				PartNumber: partNumber,
-				PartData:   byteArray,
+				PartData:   tempFile,
 			}
 
 			waitGroup.Add(1)

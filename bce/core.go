@@ -385,7 +385,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Res
 		GenerateAuthorization(*c.Credentials, *req, option)
 
 		if c.debug {
-			util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, requestHeader = %v",
+			util.Debug("", fmt.Sprintf("Request: httpMethod = %s, requestUrl = %s, requestHeader = %v",
 				req.Method, req.URL.String(), req.Header))
 		}
 
@@ -396,8 +396,8 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Res
 		}
 
 		if c.debug {
-			util.Debug("", fmt.Sprintf("httpMethod = %s, requestUrl = %s, status code = %d",
-				req.Method, req.URL.String(), res.StatusCode))
+			util.Debug("", fmt.Sprintf("Response: status code = %d, httpMethod = %s, requestUrl = %s",
+				res.StatusCode, req.Method, req.URL.String()))
 		}
 
 		bceResponse = NewResponse(res)

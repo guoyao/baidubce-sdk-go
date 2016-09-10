@@ -20,6 +20,7 @@ package bce
 import (
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/guoyao/baidubce-sdk-go/util"
@@ -40,6 +41,17 @@ func NewRequest(method, url string, body io.Reader) (*Request, error) {
 	method = strings.ToUpper(method)
 
 	rawRequest, err := http.NewRequest(method, url, body)
+
+	if file, ok := body.(*os.File); ok {
+		fileInfo, err := file.Stat()
+
+		if err != nil {
+			return nil, err
+		}
+
+		rawRequest.ContentLength = fileInfo.Size()
+	}
+
 	req := (*Request)(rawRequest)
 
 	return req, err

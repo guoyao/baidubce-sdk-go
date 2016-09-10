@@ -310,7 +310,7 @@ type UploadPartRequest struct {
 	BucketName, ObjectKey, UploadId string
 	PartSize                        int64
 	PartNumber                      int
-	PartData                        []byte
+	PartData                        io.Reader
 }
 
 type UploadPartResponse http.Header

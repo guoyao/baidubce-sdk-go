@@ -280,13 +280,7 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{},
 	} else if byteArray, ok := data.([]byte); ok {
 		reader = bytes.NewReader(byteArray)
 	} else if r, ok := data.(io.Reader); ok {
-		byteArray, err := ioutil.ReadAll(r)
-
-		if err != nil {
-			return nil, bce.NewError(err)
-		}
-
-		reader = bytes.NewReader(byteArray)
+		reader = r
 	} else {
 		panic("data type should be string or []byte or io.Reader.")
 	}
@@ -750,7 +744,7 @@ func (c *Client) UploadPart(uploadPartRequest UploadPartRequest,
 		"uploadId":   uploadPartRequest.UploadId,
 	}
 
-	req, err := bce.NewRequest(http.MethodPut, c.GetURL(bucketName, objectKey, params), bytes.NewReader(uploadPartRequest.PartData))
+	req, err := bce.NewRequest(http.MethodPut, c.GetURL(bucketName, objectKey, params), uploadPartRequest.PartData)
 
 	if err != nil {
 		return nil, bce.NewError(err)
@@ -867,8 +861,14 @@ func (c *Client) MultipartUploadFromFile(bucketName, objectKey, filePath string,
 		var skipBytes int64 = partSize * int64(i)
 		var size int64 = int64(math.Min(float64(totalSize-skipBytes), float64(partSize)))
 
-		byteArray := make([]byte, size, size)
-		_, err := file.Read(byteArray)
+		tempFile, err := util.TempFile(nil, "", "")
+
+		if err != nil {
+			return nil, bce.NewError(err)
+		}
+
+		limitReader := io.LimitReader(file, size)
+		_, err = io.Copy(tempFile, limitReader)
 
 		if err != nil {
 			return nil, bce.NewError(err)
@@ -882,24 +882,29 @@ func (c *Client) MultipartUploadFromFile(bucketName, objectKey, filePath string,
 			UploadId:   uploadId,
 			PartSize:   size,
 			PartNumber: partNumber,
-			PartData:   byteArray,
+			PartData:   tempFile,
 		}
 
 		waitGroup.Add(1)
 
 		parts = append(parts, PartSummary{PartNumber: partNumber})
 
-		go func(partNumber int) {
-			defer waitGroup.Done()
+		go func(partNumber int, f *os.File) {
+			defer func() {
+				f.Close()
+				os.Remove(f.Name())
+				waitGroup.Done()
+			}()
 
 			uploadPartResponse, bceError := c.UploadPart(uploadPartRequest, nil)
+			uploadPartRequest.PartData = nil
 
 			if bceError != nil {
 				panic(bceError)
 			}
 
 			parts[partNumber-1].ETag = uploadPartResponse.GetETag()
-		}(partNumber)
+		}(partNumber, tempFile)
 	}
 
 	waitGroup.Wait()

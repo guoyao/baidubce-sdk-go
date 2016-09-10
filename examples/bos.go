@@ -2,6 +2,7 @@ package examples
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -524,18 +525,20 @@ func multipartUpload() {
 
 	uploadId := initiateMultipartUploadResponse.UploadId
 
+	files := make([]*os.File, 0)
 	file, err := util.TempFileWithSize(1024 * 1024 * 6)
-
-	defer func() {
-		if file != nil {
-			file.Close()
-			os.Remove(file.Name())
-		}
-	}()
+	files = append(files, file)
 
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer func() {
+		for _, f := range files {
+			f.Close()
+			os.Remove(f.Name())
+		}
+	}()
 
 	fileInfo, err := file.Stat()
 
@@ -553,8 +556,15 @@ func multipartUpload() {
 		var skipBytes int64 = partSize * int64(i)
 		var size int64 = int64(math.Min(float64(totalSize-skipBytes), float64(partSize)))
 
-		byteArray := make([]byte, size, size)
-		_, err := file.Read(byteArray)
+		tempFile, err := util.TempFile(nil, "", "")
+		files = append(files, tempFile)
+
+		if err != nil {
+			panic(err)
+		}
+
+		limitReader := io.LimitReader(file, size)
+		_, err = io.Copy(tempFile, limitReader)
 
 		if err != nil {
 			panic(err)
@@ -568,7 +578,7 @@ func multipartUpload() {
 			UploadId:   uploadId,
 			PartSize:   size,
 			PartNumber: partNumber,
-			PartData:   byteArray,
+			PartData:   tempFile,
 		}
 
 		parts = append(parts, bos.PartSummary{PartNumber: partNumber})
@@ -603,7 +613,7 @@ func multipartUploadFromFile() {
 	bucketName := "baidubce-sdk-go"
 	objectKey := "examples/test-multipart-upload-from-file"
 
-	file, err := util.TempFileWithSize(1024 * 1024 * 6)
+	file, err := util.TempFileWithSize(1024 * 1024 * 10)
 
 	defer func() {
 		if file != nil {
@@ -784,7 +794,7 @@ func listMultipartUploadsFromRequest() {
 }
 
 func RunBosExamples() {
-	listParts()
+	listBuckets()
 	return
 	//abortAllMultipartUpload("docker-registry-me-test")
 	listParts()
