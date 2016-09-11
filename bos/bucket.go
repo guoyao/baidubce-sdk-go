@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -327,9 +328,29 @@ func (res UploadPartResponse) GetETag() string {
 	return strings.Replace(res.Get("Etag"), "\"", "", -1)
 }
 
+type PartSummarySlice []PartSummary
+
+func (partSummarySlice PartSummarySlice) Len() int {
+	return len(partSummarySlice)
+}
+
+func (partSummarySlice PartSummarySlice) Swap(i, j int) {
+	partSummarySlice[i], partSummarySlice[j] = partSummarySlice[j], partSummarySlice[i]
+}
+
+func (partSummarySlice PartSummarySlice) Less(i, j int) bool {
+	return partSummarySlice[i].PartNumber < partSummarySlice[j].PartNumber
+}
+
 type CompleteMultipartUploadRequest struct {
 	BucketName, ObjectKey, UploadId string
 	Parts                           []PartSummary `json:"parts"`
+}
+
+func (completeMultipartUploadRequest *CompleteMultipartUploadRequest) sort() {
+	if len(completeMultipartUploadRequest.Parts) > 1 {
+		sort.Sort(PartSummarySlice(completeMultipartUploadRequest.Parts))
+	}
 }
 
 type CompleteMultipartUploadResponse struct {

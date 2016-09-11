@@ -780,6 +780,7 @@ func (c *Client) CompleteMultipartUpload(completeMultipartUploadRequest Complete
 	checkBucketName(bucketName)
 	checkObjectKey(objectKey)
 
+	completeMultipartUploadRequest.sort()
 	params := map[string]string{"uploadId": completeMultipartUploadRequest.UploadId}
 	byteArray, err := util.ToJson(completeMultipartUploadRequest, "parts")
 
