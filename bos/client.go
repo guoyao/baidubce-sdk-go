@@ -333,7 +333,21 @@ func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string,
 
 	checkBucketName(bucketName)
 
+	keys := make([]string, 0, len(objectKeys))
+
+	for _, key := range objectKeys {
+		if key != "" {
+			keys = append(keys, key)
+		}
+	}
+
+	objectKeys = keys
 	length := len(objectKeys)
+
+	if length == 0 {
+		return nil, nil
+	}
+
 	objectMap := make(map[string][]map[string]string, 1)
 	objects := make([]map[string]string, length, length)
 
