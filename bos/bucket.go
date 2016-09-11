@@ -63,7 +63,7 @@ type BucketGrantee struct {
 type ObjectMetadata struct {
 	CacheControl       string
 	ContentDisposition string
-	ContentLength      int
+	ContentLength      int64
 	ContentMD5         string
 	ContentType        string
 	Expires            string
@@ -85,7 +85,7 @@ func NewObjectMetadataFromHeader(h http.Header) *ObjectMetadata {
 		} else if key == "content-disposition" {
 			objectMetadata.ContentDisposition = h.Get(key)
 		} else if key == "content-length" {
-			length, err := strconv.Atoi(h.Get(key))
+			length, err := strconv.ParseInt(h.Get(key), 10, 64)
 
 			if err == nil {
 				objectMetadata.ContentLength = length
@@ -124,7 +124,7 @@ func (metadata *ObjectMetadata) mergeToSignOption(option *bce.SignOption) {
 	}
 
 	if metadata.ContentLength != 0 {
-		option.AddHeader("Content-Length", strconv.Itoa(metadata.ContentLength))
+		option.AddHeader("Content-Length", strconv.FormatInt(metadata.ContentLength, 10))
 	}
 
 	if metadata.ContentMD5 != "" {
