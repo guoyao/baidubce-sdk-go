@@ -537,11 +537,11 @@ func TestMultipartUploadFromFile(t *testing.T) {
 
 		var partSize int64 = 1024 * 1024 * 2
 
-		completeMultipartUploadResponse, bceError := bosClient.MultipartUploadFromFile(bucketName,
+		completeMultipartUploadResponse, err := bosClient.MultipartUploadFromFile(bucketName,
 			objectKey, file.Name(), partSize)
 
-		if bceError != nil {
-			t.Error(util.FormatTest(method, bceError.Error(), "nil"))
+		if err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 		} else if completeMultipartUploadResponse.ETag == "" {
 			t.Error(util.FormatTest(method, "etag is not exists", "etag"))
 		}
@@ -643,10 +643,10 @@ func TestListParts(t *testing.T) {
 			ObjectKey:  objectKey,
 		}
 
-		initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+		initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
-		if bceError != nil {
-			t.Error(util.FormatTest(method, bceError.Error(), "nil"))
+		if err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 
@@ -658,10 +658,10 @@ func TestListParts(t *testing.T) {
 					UploadId:   initiateMultipartUploadResponse.UploadId,
 				}
 
-				bceError := bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+				err := bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
 
-				if bceError != nil {
-					t.Error(util.FormatTest(method, bceError.Error(), "nil"))
+				if err != nil {
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				}
 			}
 		}()
@@ -734,10 +734,10 @@ func TestListParts(t *testing.T) {
 			go func(partNumber int) {
 				defer waitGroup.Done()
 
-				uploadPartResponse, bceError := bosClient.UploadPart(uploadPartRequest, nil)
+				uploadPartResponse, err := bosClient.UploadPart(uploadPartRequest, nil)
 
-				if bceError != nil {
-					t.Error(util.FormatTest(method, bceError.Error(), "nil"))
+				if err != nil {
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
 					return
 				}
 
@@ -747,10 +747,10 @@ func TestListParts(t *testing.T) {
 
 		waitGroup.Wait()
 
-		listPartsResponse, bceError := bosClient.ListParts(bucketName, objectKey, initiateMultipartUploadResponse.UploadId, nil)
+		listPartsResponse, err := bosClient.ListParts(bucketName, objectKey, initiateMultipartUploadResponse.UploadId, nil)
 
-		if bceError != nil {
-			t.Error(util.FormatTest(method, bceError.Error(), "nil"))
+		if err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
 			return
 		}
 

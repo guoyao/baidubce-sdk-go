@@ -65,10 +65,10 @@ func PutObject() {
 	option := new(bce.SignOption)
 	metadata := new(bos.ObjectMetadata)
 	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
-	putObjectResponse, bceError := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
+	putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(putObjectResponse.GetETag())
 	}
@@ -76,10 +76,10 @@ func PutObject() {
 	/*------------------ put object from bytes --------------------*/
 	objectKey = "examples/put-object-from-bytes"
 	byteArray := make([]byte, 1024, 1024)
-	putObjectResponse, bceError = bosClient.PutObject(bucketName, objectKey, byteArray, nil, nil)
+	putObjectResponse, err = bosClient.PutObject(bucketName, objectKey, byteArray, nil, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(putObjectResponse.GetETag())
 	}
@@ -103,10 +103,10 @@ func PutObject() {
 	if err != nil {
 		log.Println(err)
 	} else {
-		putObjectResponse, bceError = bosClient.PutObject(bucketName, objectKey, file, nil, nil)
+		putObjectResponse, err = bosClient.PutObject(bucketName, objectKey, file, nil, nil)
 
-		if bceError != nil {
-			log.Println(bceError)
+		if err != nil {
+			log.Println(err)
 		} else {
 			fmt.Println(putObjectResponse.GetETag())
 		}
@@ -126,10 +126,10 @@ func MultipartUpload() {
 		ObjectKey:  objectKey,
 	}
 
-	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+	initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
-	if bceError != nil {
-		panic(bceError)
+	if err != nil {
+		panic(err)
 	}
 
 	uploadId := initiateMultipartUploadResponse.UploadId
@@ -192,10 +192,10 @@ func MultipartUpload() {
 
 		parts = append(parts, bos.PartSummary{PartNumber: partNumber})
 
-		uploadPartResponse, bceError := bosClient.UploadPart(uploadPartRequest, nil)
+		uploadPartResponse, err := bosClient.UploadPart(uploadPartRequest, nil)
 
-		if bceError != nil {
-			panic(bceError)
+		if err != nil {
+			panic(err)
 		}
 
 		parts[partNumber-1].ETag = uploadPartResponse.GetETag()
@@ -208,11 +208,11 @@ func MultipartUpload() {
 		Parts:      parts,
 	}
 
-	completeMultipartUploadResponse, bceError := bosClient.CompleteMultipartUpload(
+	completeMultipartUploadResponse, err := bosClient.CompleteMultipartUpload(
 		completeMultipartUploadRequest, nil)
 
-	if bceError != nil {
-		panic(bceError)
+	if err != nil {
+		panic(err)
 	}
 
 	fmt.Println(completeMultipartUploadResponse.ETag)
@@ -241,11 +241,11 @@ func MultipartUploadFromFile() {
 
 	var partSize int64 = 1024 * 1024 * 2
 
-	completeMultipartUploadResponse, bceError := bosClient.MultipartUploadFromFile(bucketName,
+	completeMultipartUploadResponse, err := bosClient.MultipartUploadFromFile(bucketName,
 		objectKey, file.Name(), partSize)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(completeMultipartUploadResponse.ETag)
 	}

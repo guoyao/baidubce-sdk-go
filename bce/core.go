@@ -107,7 +107,7 @@ func (config *Config) GetUserAgent() string {
 type RetryPolicy interface {
 	GetMaxErrorRetry() int
 	GetMaxDelay() time.Duration
-	GetDelayBeforeNextRetry(bceError *Error, retriesAttempted int) time.Duration
+	GetDelayBeforeNextRetry(err error, retriesAttempted int) time.Duration
 }
 
 type DefaultRetryPolicy struct {
@@ -127,8 +127,8 @@ func (policy *DefaultRetryPolicy) GetMaxDelay() time.Duration {
 	return policy.MaxDelay
 }
 
-func (policy *DefaultRetryPolicy) GetDelayBeforeNextRetry(bceError *Error, retriesAttempted int) time.Duration {
-	if !policy.shouldRetry(bceError, retriesAttempted) {
+func (policy *DefaultRetryPolicy) GetDelayBeforeNextRetry(err error, retriesAttempted int) time.Duration {
+	if !policy.shouldRetry(err, retriesAttempted) {
 		return -1
 	}
 
@@ -141,19 +141,21 @@ func (policy *DefaultRetryPolicy) GetDelayBeforeNextRetry(bceError *Error, retri
 	return duration
 }
 
-func (policy *DefaultRetryPolicy) shouldRetry(bceError *Error, retriesAttempted int) bool {
+func (policy *DefaultRetryPolicy) shouldRetry(err error, retriesAttempted int) bool {
 	if retriesAttempted > policy.GetMaxErrorRetry() {
 		return false
 	}
 
-	if bceError.StatusCode == http.StatusInternalServerError {
-		log.Println("Retry for internal server error.")
-		return true
-	}
+	if bceError, ok := err.(*Error); ok {
+		if bceError.StatusCode == http.StatusInternalServerError {
+			log.Println("Retry for internal server error.")
+			return true
+		}
 
-	if bceError.StatusCode == http.StatusServiceUnavailable {
-		log.Println("Retry for service unavailable.")
-		return true
+		if bceError.StatusCode == http.StatusServiceUnavailable {
+			log.Println("Retry for service unavailable.")
+			return true
+		}
 	}
 
 	return false
@@ -368,7 +370,7 @@ func (c *Client) GetURL(host, uriPath string, params map[string]string) string {
 }
 
 // SendRequest sends a http request to the endpoint of baidubce api.
-func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Response, bceError *Error) {
+func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Response, err error) {
 	if option == nil {
 		option = &SignOption{}
 	}
@@ -380,7 +382,7 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Res
 	}
 
 	for i := 0; ; i++ {
-		bceResponse, bceError = nil, nil
+		bceResponse, err = nil, nil
 
 		GenerateAuthorization(*c.Credentials, *req, option)
 
@@ -389,38 +391,28 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Res
 				req.Method, req.URL.String(), req.Header))
 		}
 
-		res, err := c.httpClient.Do(req.raw())
-
-		if err != nil {
-			continue
-		}
+		resp, httpError := c.httpClient.Do(req.raw())
 
 		if c.debug {
 			util.Debug("", fmt.Sprintf("Response: status code = %d, httpMethod = %s, requestUrl = %s",
-				res.StatusCode, req.Method, req.URL.String()))
+				resp.StatusCode, req.Method, req.URL.String()))
 		}
 
-		bceResponse = NewResponse(res)
-
-		if res.StatusCode >= http.StatusBadRequest {
-			bodyContent, err := bceResponse.GetBodyContent()
-
-			if err != nil {
-				bceError = NewError(err)
-			}
-
-			if bceError == nil {
-				bceError = NewErrorFromJSON(bodyContent)
-			}
-
-			bceError.StatusCode = res.StatusCode
+		if httpError != nil {
+			continue
 		}
 
-		if bceError == nil {
+		bceResponse = NewResponse(resp)
+
+		if resp.StatusCode >= http.StatusBadRequest {
+			err = buildError(bceResponse)
+		}
+
+		if err == nil {
 			return
 		}
 
-		duration := c.RetryPolicy.GetDelayBeforeNextRetry(bceError, i+1)
+		duration := c.RetryPolicy.GetDelayBeforeNextRetry(err, i+1)
 
 		if duration <= 0 {
 			return

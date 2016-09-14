@@ -183,10 +183,10 @@ func putObject() {
 	option := new(bce.SignOption)
 	metadata := new(bos.ObjectMetadata)
 	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
-	putObjectResponse, bceError := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
+	putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(putObjectResponse.GetETag())
 	}
@@ -196,10 +196,10 @@ func putObject() {
 	/*------------------ put object from bytes --------------------*/
 	objectKey = "examples/put-object-from-bytes"
 	byteArray := make([]byte, 1024, 1024)
-	putObjectResponse, bceError = bosClient.PutObject(bucketName, objectKey, byteArray, nil, nil)
+	putObjectResponse, err = bosClient.PutObject(bucketName, objectKey, byteArray, nil, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(putObjectResponse.GetETag())
 	}
@@ -223,10 +223,10 @@ func putObject() {
 	if err != nil {
 		log.Println(err)
 	} else {
-		putObjectResponse, bceError = bosClient.PutObject(bucketName, objectKey, file, nil, nil)
+		putObjectResponse, err = bosClient.PutObject(bucketName, objectKey, file, nil, nil)
 
-		if bceError != nil {
-			log.Println(bceError)
+		if err != nil {
+			log.Println(err)
 		} else {
 			fmt.Println(putObjectResponse.GetETag())
 		}
@@ -243,18 +243,18 @@ func deleteObject() {
 	metadata := new(bos.ObjectMetadata)
 	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
 
-	putObjectResponse, bceError := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
+	putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(putObjectResponse.GetETag())
 	}
 
-	bceError = bosClient.DeleteObject(bucketName, objectKey, nil)
+	err = bosClient.DeleteObject(bucketName, objectKey, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	}
 }
 
@@ -269,19 +269,19 @@ func deleteMultipleObjects() {
 	str := "Hello World 你好"
 
 	for _, value := range objects {
-		putObjectResponse, bceError := bosClient.PutObject(bucketName, value, str, nil, nil)
+		putObjectResponse, err := bosClient.PutObject(bucketName, value, str, nil, nil)
 
-		if bceError != nil {
-			log.Fatal(bceError)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		fmt.Println(putObjectResponse.GetETag())
 	}
 
-	deleteMultipleObjectsResponse, bceError := bosClient.DeleteMultipleObjects(bucketName, objects, nil)
+	deleteMultipleObjectsResponse, err := bosClient.DeleteMultipleObjects(bucketName, objects, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else if deleteMultipleObjectsResponse != nil {
 		for _, deleteMultipleObjectsError := range deleteMultipleObjectsResponse.Errors {
 			log.Println(deleteMultipleObjectsError.Error())
@@ -292,10 +292,10 @@ func deleteMultipleObjects() {
 func listObjects() {
 	bucketName := "baidubce-sdk-go"
 
-	listObjectsResponse, bceError := bosClient.ListObjects(bucketName, nil)
+	listObjectsResponse, err := bosClient.ListObjects(bucketName, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		for _, objectSummary := range listObjectsResponse.Contents {
 			fmt.Println(objectSummary.Key, objectSummary.ETag)
@@ -316,10 +316,10 @@ func listObjectsFromRequest() {
 		MaxKeys: 100,
 	}
 
-	listObjectsResponse, bceError := bosClient.ListObjectsFromRequest(listObjectsRequest, nil)
+	listObjectsResponse, err := bosClient.ListObjectsFromRequest(listObjectsRequest, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		for _, objectSummary := range listObjectsResponse.Contents {
 			fmt.Println(objectSummary.Key, objectSummary.ETag)
@@ -337,10 +337,10 @@ func copyObject() {
 	destBucketName := "baidubce-sdk-go"
 	destKey := "examples/test-copy-dest"
 
-	copyObjectResponse, bceError := bosClient.CopyObject(srcBucketName, srcKey, destBucketName, destKey, nil)
+	copyObjectResponse, err := bosClient.CopyObject(srcBucketName, srcKey, destBucketName, destKey, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(copyObjectResponse.ETag, copyObjectResponse.LastModified)
 	}
@@ -367,10 +367,10 @@ func copyObjectFromRequest() {
 		},
 	}
 
-	copyObjectResponse, bceError := bosClient.CopyObjectFromRequest(copyObjectRequest, nil)
+	copyObjectResponse, err := bosClient.CopyObjectFromRequest(copyObjectRequest, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(copyObjectResponse.ETag, copyObjectResponse.LastModified)
 	}
@@ -380,10 +380,10 @@ func getObject() {
 	bucketName := "baidubce-sdk-go"
 	objectKey := "examples/test-get-object"
 
-	object, bceError := bosClient.GetObject(bucketName, objectKey, nil)
+	object, err := bosClient.GetObject(bucketName, objectKey, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(object.ObjectMetadata)
 
@@ -411,10 +411,10 @@ func getObjectFromRequest() {
 	}
 	getObjectRequest.SetRange(0, 1000)
 
-	object, bceError := bosClient.GetObjectFromRequest(getObjectRequest, nil)
+	object, err := bosClient.GetObjectFromRequest(getObjectRequest, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(object.ObjectMetadata)
 
@@ -447,10 +447,10 @@ func getObjectToFile() {
 	if err != nil {
 		log.Println(err)
 	} else {
-		objectMetadata, bceError := bosClient.GetObjectToFile(getObjectRequest, file, nil)
+		objectMetadata, err := bosClient.GetObjectToFile(getObjectRequest, file, nil)
 
-		if bceError != nil {
-			log.Println(bceError)
+		if err != nil {
+			log.Println(err)
 		} else {
 			fmt.Println(objectMetadata)
 		}
@@ -461,10 +461,10 @@ func getObjectMetadata() {
 	bucketName := "baidubce-sdk-go"
 	objectKey := "examples/test-get-object-metedata"
 
-	objectMetadata, bceError := bosClient.GetObjectMetadata(bucketName, objectKey, nil)
+	objectMetadata, err := bosClient.GetObjectMetadata(bucketName, objectKey, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(objectMetadata)
 	}
@@ -478,10 +478,10 @@ func generatePresignedUrl() {
 		ExpirationPeriodInSeconds: 300,
 	}
 
-	url, bceError := bosClient.GeneratePresignedUrl(bucketName, objectKey, option)
+	url, err := bosClient.GeneratePresignedUrl(bucketName, objectKey, option)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(url)
 	}
@@ -498,10 +498,10 @@ func appendObject() {
 	metadata := new(bos.ObjectMetadata)
 	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
 
-	appendObjectResponse, bceError := bosClient.AppendObject(bucketName, objectKey, offset, str, metadata, option)
+	appendObjectResponse, err := bosClient.AppendObject(bucketName, objectKey, offset, str, metadata, option)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(appendObjectResponse.GetETag(), appendObjectResponse.GetMD5(),
 			appendObjectResponse.GetNextAppendOffset())
@@ -517,10 +517,10 @@ func multipartUpload() {
 		ObjectKey:  objectKey,
 	}
 
-	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+	initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
-	if bceError != nil {
-		panic(bceError)
+	if err != nil {
+		panic(err)
 	}
 
 	uploadId := initiateMultipartUploadResponse.UploadId
@@ -583,10 +583,10 @@ func multipartUpload() {
 
 		parts = append(parts, bos.PartSummary{PartNumber: partNumber})
 
-		uploadPartResponse, bceError := bosClient.UploadPart(uploadPartRequest, nil)
+		uploadPartResponse, err := bosClient.UploadPart(uploadPartRequest, nil)
 
-		if bceError != nil {
-			panic(bceError)
+		if err != nil {
+			panic(err)
 		}
 
 		parts[partNumber-1].ETag = uploadPartResponse.GetETag()
@@ -599,11 +599,11 @@ func multipartUpload() {
 		Parts:      parts,
 	}
 
-	completeMultipartUploadResponse, bceError := bosClient.CompleteMultipartUpload(
+	completeMultipartUploadResponse, err := bosClient.CompleteMultipartUpload(
 		completeMultipartUploadRequest, nil)
 
-	if bceError != nil {
-		panic(bceError)
+	if err != nil {
+		panic(err)
 	}
 
 	fmt.Println(completeMultipartUploadResponse.ETag)
@@ -628,11 +628,11 @@ func multipartUploadFromFile() {
 
 	var partSize int64 = 1024 * 1024 * 2
 
-	completeMultipartUploadResponse, bceError := bosClient.MultipartUploadFromFile(bucketName,
+	completeMultipartUploadResponse, err := bosClient.MultipartUploadFromFile(bucketName,
 		objectKey, file.Name(), partSize)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	} else {
 		fmt.Println(completeMultipartUploadResponse.ETag)
 	}
@@ -647,10 +647,10 @@ func abortMultipartUpload() {
 		ObjectKey:  objectKey,
 	}
 
-	initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+	initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
-	if bceError != nil {
-		panic(bceError)
+	if err != nil {
+		panic(err)
 	}
 
 	uploadId := initiateMultipartUploadResponse.UploadId
@@ -661,18 +661,18 @@ func abortMultipartUpload() {
 		UploadId:   uploadId,
 	}
 
-	bceError = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+	err = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 	}
 }
 
 func abortAllMultipartUpload(bucketName string) {
-	listMultipartUploadsResponse, bceError := bosClient.ListMultipartUploads(bucketName, nil)
+	listMultipartUploadsResponse, err := bosClient.ListMultipartUploads(bucketName, nil)
 
-	if bceError != nil {
-		log.Println(bceError)
+	if err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -683,10 +683,10 @@ func abortAllMultipartUpload(bucketName string) {
 			UploadId:   multipartUploadSummary.UploadId,
 		}
 
-		bceError = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
+		err = bosClient.AbortMultipartUpload(abortMultipartUploadRequest, nil)
 
-		if bceError != nil {
-			log.Println(bceError)
+		if err != nil {
+			log.Println(err)
 		}
 	}
 }
@@ -760,10 +760,10 @@ func listMultipartUploadsFromRequest() {
 			ObjectKey:  objectKey,
 		}
 
-		initiateMultipartUploadResponse, bceError := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
+		initiateMultipartUploadResponse, err := bosClient.InitiateMultipartUpload(initiateMultipartUploadRequest, nil)
 
-		if bceError != nil {
-			log.Println(bceError)
+		if err != nil {
+			log.Println(err)
 			log.Println(initiateMultipartUploadResponse.UploadId)
 			return
 		}
