@@ -25,19 +25,21 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
-
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 func GetURL(protocol, host, uriPath string, params map[string]string) string {
@@ -366,10 +368,6 @@ func CheckFileExists(filename string) bool {
 	return exist
 }
 
-func HomeDir() (string, error) {
-	return homedir.Dir()
-}
-
 func TempFileWithSize(fileSize int64) (*os.File, error) {
 	f, err := TempFile(nil, "", "")
 
@@ -426,6 +424,96 @@ func TempFile(content []byte, dir, prefix string) (*os.File, error) {
 	}
 
 	return tmpfile, nil
+}
+
+var homeDir string
+
+func HomeDir() (string, error) {
+	if homeDir != "" {
+		return homeDir, nil
+	}
+
+	var result string
+	var err error
+
+	if runtime.GOOS == "windows" {
+		result, err = dirWindows()
+	} else {
+		result, err = dirUnix()
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	homeDir = result
+
+	return result, nil
+}
+
+func dirUnix() (string, error) {
+	// First prefer the HOME environmental variable
+	if home := os.Getenv("HOME"); home != "" {
+		return home, nil
+	}
+
+	// If that fails, try getent
+	var stdout bytes.Buffer
+	cmd := exec.Command("getent", "passwd", strconv.Itoa(os.Getuid()))
+	cmd.Stdout = &stdout
+
+	if err := cmd.Run(); err != nil {
+		// If "getent" is missing, ignore it
+		if err == exec.ErrNotFound {
+			return "", err
+		}
+	} else {
+		if passwd := strings.TrimSpace(stdout.String()); passwd != "" {
+			// username:password:uid:gid:gecos:home:shell
+			passwdParts := strings.SplitN(passwd, ":", 7)
+
+			if len(passwdParts) > 5 {
+				return passwdParts[5], nil
+			}
+		}
+	}
+
+	// If all else fails, try the shell
+	stdout.Reset()
+	cmd = exec.Command("sh", "-c", "cd && pwd")
+	cmd.Stdout = &stdout
+
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	result := strings.TrimSpace(stdout.String())
+
+	if result == "" {
+		return "", errors.New("blank output when reading home directory")
+	}
+
+	return result, nil
+}
+
+func dirWindows() (string, error) {
+	if home := os.Getenv("HOME"); home != "" {
+		return home, nil
+	}
+
+	drive := os.Getenv("HOMEDRIVE")
+	path := os.Getenv("HOMEPATH")
+	home := drive + path
+
+	if drive == "" || path == "" {
+		home = os.Getenv("USERPROFILE")
+	}
+
+	if home == "" {
+		return "", errors.New("HOMEDRIVE, HOMEPATH, and USERPROFILE are blank")
+	}
+
+	return home, nil
 }
 
 func Debug(title, message string) {
