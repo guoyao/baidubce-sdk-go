@@ -793,10 +793,81 @@ func listMultipartUploadsFromRequest() {
 	}
 }
 
+func getBucketCors() {
+	bucketName := "baidubce-sdk-go"
+	bucketCors, err := bosClient.GetBucketCors(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		for _, bucketCorsItem := range bucketCors.CorsConfiguration {
+			fmt.Println(bucketCorsItem.AllowedOrigins)
+			fmt.Println(bucketCorsItem.AllowedMethods)
+			fmt.Println(bucketCorsItem.AllowedHeaders)
+			fmt.Println(bucketCorsItem.AllowedExposeHeaders)
+			fmt.Println(bucketCorsItem.MaxAgeSeconds)
+		}
+	}
+}
+
+func setBucketCors() {
+	bucketName := "baidubce-sdk-go"
+	bucketCors := bos.BucketCors{
+		CorsConfiguration: []bos.BucketCorsItem{
+			bos.BucketCorsItem{
+				AllowedOrigins:       []string{"http://*", "https://*"},
+				AllowedMethods:       []string{"GET", "HEAD", "POST", "PUT"},
+				AllowedHeaders:       []string{"*"},
+				AllowedExposeHeaders: []string{"ETag", "x-bce-request-id", "Content-Type"},
+				MaxAgeSeconds:        3600,
+			},
+			bos.BucketCorsItem{
+				AllowedOrigins:       []string{"http://www.example.com", "www.example2.com"},
+				AllowedMethods:       []string{"GET", "HEAD", "DELETE"},
+				AllowedHeaders:       []string{"Authorization", "x-bce-test", "x-bce-test2"},
+				AllowedExposeHeaders: []string{"user-custom-expose-header"},
+				MaxAgeSeconds:        2000,
+			},
+		},
+	}
+
+	err := bosClient.SetBucketCors(bucketName, bucketCors, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func deleteBucketCors() {
+	bucketName := "baidubce-sdk-go"
+	err := bosClient.DeleteBucketCors(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func optionsObject() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "put-object-from-file"
+
+	resp, err := bosClient.OptionsObject(bucketName, objectKey, "http://www.example.com", "GET", "x-bce-test")
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Println(resp.Header)
+	}
+}
+
 func RunBosExamples() {
 	listBuckets()
 	return
 	//abortAllMultipartUpload("docker-registry-me-test")
+	optionsObject()
+	deleteBucketCors()
+	setBucketCors()
+	getBucketCors()
 	listParts()
 	listPartsFromRequest()
 	listMultipartUploads()

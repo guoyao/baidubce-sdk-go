@@ -762,6 +762,127 @@ func TestListParts(t *testing.T) {
 	})
 }
 
+func TestSetBucketCors(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-cors-"
+	method := "SetBucketCors"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		bucketCors := BucketCors{
+			CorsConfiguration: []BucketCorsItem{
+				BucketCorsItem{
+					AllowedOrigins:       []string{"http://*", "https://*"},
+					AllowedMethods:       []string{"GET", "HEAD", "POST", "PUT"},
+					AllowedHeaders:       []string{"*"},
+					AllowedExposeHeaders: []string{"ETag", "x-bce-request-id", "Content-Type"},
+					MaxAgeSeconds:        3600,
+				},
+				BucketCorsItem{
+					AllowedOrigins:       []string{"http://www.example.com", "www.example2.com"},
+					AllowedMethods:       []string{"GET", "HEAD", "DELETE"},
+					AllowedHeaders:       []string{"Authorization", "x-bce-test", "x-bce-test2"},
+					AllowedExposeHeaders: []string{"user-custom-expose-header"},
+					MaxAgeSeconds:        2000,
+				},
+			},
+		}
+
+		if err := bosClient.SetBucketCors(bucketName, bucketCors, nil); err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
+		}
+	})
+}
+
+func TestGetBucketCors(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-get-bucket-cors-"
+	method := "GetBucketCors"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		bucketCors := BucketCors{
+			CorsConfiguration: []BucketCorsItem{
+				BucketCorsItem{
+					AllowedOrigins:       []string{"http://*", "https://*"},
+					AllowedMethods:       []string{"GET", "HEAD", "POST", "PUT"},
+					AllowedHeaders:       []string{"*"},
+					AllowedExposeHeaders: []string{"ETag", "x-bce-request-id", "Content-Type"},
+					MaxAgeSeconds:        3600,
+				},
+				BucketCorsItem{
+					AllowedOrigins:       []string{"http://www.example.com", "www.example2.com"},
+					AllowedMethods:       []string{"GET", "HEAD", "DELETE"},
+					AllowedHeaders:       []string{"Authorization", "x-bce-test", "x-bce-test2"},
+					AllowedExposeHeaders: []string{"user-custom-expose-header"},
+					MaxAgeSeconds:        2000,
+				},
+			},
+		}
+
+		if err := bosClient.SetBucketCors(bucketName, bucketCors, nil); err != nil {
+			t.Error(util.FormatTest(method+":SetBucketCors", err.Error(), "nil"))
+		}
+
+		_, err := bosClient.GetBucketCors(bucketName, nil)
+
+		if err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
+		}
+	})
+}
+
+func TestDeleteBucketCors(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-delete-bucket-cors-"
+	method := "DeleteBucketCors"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		err := bosClient.DeleteBucketCors(bucketName, nil)
+		if err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
+		}
+	})
+}
+
+func TestOptionsObject(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-options-object-"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+	method := "OptionsObject"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		_, err := bosClient.PutObject(bucketName, objectKey, str, nil, nil)
+
+		if err != nil {
+			t.Error(util.FormatTest(method+":PutObject", err.Error(), "nil"))
+		}
+
+		bucketCors := BucketCors{
+			CorsConfiguration: []BucketCorsItem{
+				BucketCorsItem{
+					AllowedOrigins:       []string{"http://*", "https://*"},
+					AllowedMethods:       []string{"GET", "HEAD", "POST", "PUT"},
+					AllowedHeaders:       []string{"*"},
+					AllowedExposeHeaders: []string{"ETag", "x-bce-request-id", "Content-Type"},
+					MaxAgeSeconds:        3600,
+				},
+				BucketCorsItem{
+					AllowedOrigins:       []string{"http://www.example.com", "www.example2.com"},
+					AllowedMethods:       []string{"GET", "HEAD", "DELETE"},
+					AllowedHeaders:       []string{"Authorization", "x-bce-test", "x-bce-test2"},
+					AllowedExposeHeaders: []string{"user-custom-expose-header"},
+					MaxAgeSeconds:        2000,
+				},
+			},
+		}
+
+		if err := bosClient.SetBucketCors(bucketName, bucketCors, nil); err != nil {
+			t.Error(util.FormatTest(method+":SetBucketCors", err.Error(), "nil"))
+		}
+		_, err = bosClient.OptionsObject(bucketName, objectKey, "http://www.example.com", "GET", "x-bce-test")
+
+		if err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
+		}
+	})
+}
+
 func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)

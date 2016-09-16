@@ -1085,6 +1085,92 @@ func (c *Client) ListMultipartUploadsFromRequest(listMultipartUploadsRequest Lis
 	return listMultipartUploadsResponse, nil
 }
 
+func (c *Client) GetBucketCors(bucketName string, option *bce.SignOption) (*BucketCors, error) {
+	params := map[string]string{"cors": ""}
+	req, err := bce.NewRequest(http.MethodGet, c.GetURL(bucketName, "", params), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.SendRequest(req, option)
+
+	if err != nil {
+		return nil, err
+	}
+
+	bodyContent, err := resp.GetBodyContent()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var bucketCors *BucketCors
+
+	err = json.Unmarshal(bodyContent, &bucketCors)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bucketCors, nil
+}
+
+func (c *Client) SetBucketCors(bucketName string, bucketCors BucketCors, option *bce.SignOption) error {
+	byteArray, err := util.ToJson(bucketCors, "corsConfiguration")
+
+	if err != nil {
+		return err
+	}
+
+	params := map[string]string{"cors": ""}
+	req, err := bce.NewRequest(http.MethodPut, c.GetURL(bucketName, "", params), bytes.NewReader(byteArray))
+
+	if err != nil {
+		return err
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	_, err = c.SendRequest(req, option)
+
+	return err
+}
+
+func (c *Client) DeleteBucketCors(bucketName string, option *bce.SignOption) error {
+	params := map[string]string{"cors": ""}
+	req, err := bce.NewRequest(http.MethodDelete, c.GetURL(bucketName, "", params), nil)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = c.SendRequest(req, option)
+
+	return err
+}
+
+func (c *Client) OptionsObject(bucketName, objectKey, origin, accessControlRequestMethod,
+	accessControlRequestHeaders string) (*bce.Response, error) {
+
+	checkBucketName(bucketName)
+	checkObjectKey(objectKey)
+
+	req, err := bce.NewRequest(http.MethodOptions, c.GetURL(bucketName, objectKey, nil), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	option := bce.CheckSignOption(nil)
+	option.AddHeader("Origin", origin)
+	option.AddHeader("Access-Control-Request-Method", accessControlRequestMethod)
+	option.AddHeader("Access-Control-Request-Headers", accessControlRequestHeaders)
+
+	return c.SendRequest(req, option)
+}
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest(http.MethodPut, c.GetURL(bucketName, "", params), nil)

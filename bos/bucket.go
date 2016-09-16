@@ -420,6 +420,18 @@ type ListPartsResponse struct {
 	Parts                []PartSummary
 }
 
+type BucketCors struct {
+	CorsConfiguration []BucketCorsItem `json:"corsConfiguration"`
+}
+
+type BucketCorsItem struct {
+	AllowedOrigins       []string `json:"allowedOrigins"`
+	AllowedMethods       []string `json:"allowedMethods"`
+	AllowedHeaders       []string `json:"allowedHeaders"`
+	AllowedExposeHeaders []string `json:"allowedExposeHeaders"`
+	MaxAgeSeconds        int      `json:"maxAgeSeconds"`
+}
+
 func IsUserDefinedMetadata(metadata string) bool {
 	return strings.Index(metadata, UserDefinedMetadataPrefix) == 0
 }
