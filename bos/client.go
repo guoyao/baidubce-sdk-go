@@ -21,6 +21,7 @@ import (
 var Endpoint = map[string]string{
 	"bj": "bj.bcebos.com",
 	"gz": "gz.bcebos.com",
+	"hk": "hk.bcebos.com",
 }
 
 type Config struct {

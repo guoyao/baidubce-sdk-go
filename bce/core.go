@@ -47,6 +47,7 @@ var DefaultUserAgent = strings.Join([]string{
 var Region = map[string]string{
 	"bj": "bj",
 	"gz": "gz",
+	"hk": "hk",
 }
 
 // Credentials struct for baidubce.

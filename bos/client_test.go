@@ -31,7 +31,7 @@ func TestGetBucketLocation(t *testing.T) {
 	method := "GetBucketLocation"
 
 	around(t, method, bucketNamePrefix, "", func(bucketName string) {
-		expected := "bj"
+		expected := bosClient.GetRegion()
 		location, _ := bosClient.GetBucketLocation(bucketName, nil)
 
 		if location.LocationConstraint != expected {
