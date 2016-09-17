@@ -22,6 +22,7 @@ var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU
 var bceConfig = &bce.Config{
 	Credentials: credentials,
 	Checksum:    true,
+	//Protocol:    "https",
 }
 var bosConfig = NewConfig(bceConfig)
 var bosClient = NewClient(bosConfig)
@@ -961,6 +962,46 @@ func TestDeleteBucketLogging(t *testing.T) {
 				if err != nil {
 					t.Error(util.FormatTest(method, err.Error(), "nil"))
 				}
+			}
+		}
+	})
+}
+
+func TestPubObjectBySTS(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-put-object-by-sts-"
+	method := "PutObject"
+	objectKey := "put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
+		req := bce.SessionTokenRequest{
+			DurationSeconds: 600,
+			Id:              "ef5a4b19192f4931adcf0e12f82795e2",
+			AccessControlList: []bce.AccessControlListItem{
+				bce.AccessControlListItem{
+					Service:    "bce:bos",
+					Region:     "bj",
+					Effect:     "Allow",
+					Resource:   []string{bucketName + "/*"},
+					Permission: []string{"READ", "WRITE"},
+				},
+			},
+		}
+
+		sessionTokenResponse, err := bosClient.GetSessionToken(req, nil)
+
+		if err != nil {
+			t.Error(util.FormatTest(method+":GetSessionToken", err.Error(), "nil"))
+		} else {
+			option := &bce.SignOption{
+				Credentials: bce.NewCredentials(sessionTokenResponse.AccessKeyId, sessionTokenResponse.SecretAccessKey),
+				Headers:     map[string]string{"x-bce-security-token": sessionTokenResponse.SessionToken},
+			}
+
+			_, err := bosClient.PutObject(bucketName, objectKey, str, nil, option)
+
+			if err != nil {
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
 			}
 		}
 	})

@@ -1,6 +1,7 @@
 package bce
 
 import (
+	"os"
 	"testing"
 
 	"github.com/guoyao/baidubce-sdk-go/util"
@@ -10,6 +11,14 @@ var credentials = Credentials{
 	AccessKeyID:     "0b0f67dfb88244b289b72b142befad0c",
 	SecretAccessKey: "bad522c2126a4618a8125f4b6cf6356f",
 }
+
+var bceConfig = &Config{
+	Credentials: NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK")),
+	Checksum:    true,
+	//Protocol:    "https",
+}
+
+var bceClient = NewClient(bceConfig)
 
 var defaultSignOption = NewSignOption(
 	"2015-04-27T08:23:49Z",
@@ -43,6 +52,32 @@ func TestGenerateAuthorization(t *testing.T) {
 	authorization := GenerateAuthorization(credentials, *req, defaultSignOption)
 	if authorization != expected {
 		t.Error(util.FormatTest("GenerateAuthorization", authorization, expected))
+	}
+}
+
+func TestGetSessionToken(t *testing.T) {
+	method := "GetSessionToken"
+
+	req := SessionTokenRequest{
+		DurationSeconds: 600,
+		Id:              "ef5a4b19192f4931adcf0e12f82795e2",
+		AccessControlList: []AccessControlListItem{
+			AccessControlListItem{
+				Service:    "bce:bos",
+				Region:     "bj",
+				Effect:     "Allow",
+				Resource:   []string{"baidubce-sdk-go/*"},
+				Permission: []string{"READ"},
+			},
+		},
+	}
+
+	sessionTokenResponse, err := bceClient.GetSessionToken(req, nil)
+
+	if err != nil {
+		t.Error(util.FormatTest(method, err.Error(), "nil"))
+	} else if sessionTokenResponse.SessionToken == "" {
+		t.Error(util.FormatTest(method, "sessionToken is empty", "non empty sessionToken"))
 	}
 }
 

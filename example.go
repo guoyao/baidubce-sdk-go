@@ -6,4 +6,5 @@ import (
 
 func main() {
 	examples.RunBosExamples()
+	//examples.RunBceExamples()
 }

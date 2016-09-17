@@ -7,33 +7,17 @@ import (
 	"log"
 	"math"
 	"os"
-	//"time"
 
 	"github.com/guoyao/baidubce-sdk-go/bce"
 	"github.com/guoyao/baidubce-sdk-go/bos"
 	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
-var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK"))
-
-//var bceConfig = bce.NewConfig(credentials)
-var bceConfig = &bce.Config{
-	Credentials: credentials,
-	Checksum:    true,
-}
 var bosConfig = bos.NewConfig(bceConfig)
 var bosClient = bos.NewClient(bosConfig)
 
 func init() {
 	bosClient.SetDebug(true)
-
-	/*
-		bceConfig.Endpoint = "baidubce-sdk-go.bj.bcebos.com"
-		bceConfig.ProxyHost = "agent.baidu.com"
-		bceConfig.ProxyPort = 8118
-		bceConfig.MaxConnections = 6
-		bceConfig.Timeout = 6 * time.Second
-	*/
 }
 
 func getBucketLocation() {
@@ -180,18 +164,15 @@ func putObject() {
 	objectKey := "examples/put-object-from-string.txt"
 	str := "Hello World 你好"
 
-	option := new(bce.SignOption)
 	metadata := new(bos.ObjectMetadata)
 	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
-	putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
+	putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, metadata, nil)
 
 	if err != nil {
 		log.Println(err)
 	} else {
 		fmt.Println(putObjectResponse.GetETag())
 	}
-
-	return
 
 	/*------------------ put object from bytes --------------------*/
 	objectKey = "examples/put-object-from-bytes"
@@ -233,10 +214,48 @@ func putObject() {
 	}
 }
 
+func putObjectBySTS() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "examples/put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	req := bce.SessionTokenRequest{
+		DurationSeconds: 600,
+		Id:              "ef5a4b19192f4931adcf0e12f82795e2",
+		AccessControlList: []bce.AccessControlListItem{
+			bce.AccessControlListItem{
+				Service:    "bce:bos",
+				Region:     "bj",
+				Effect:     "Allow",
+				Resource:   []string{bucketName + "/*"},
+				Permission: []string{"READ", "WRITE"},
+			},
+		},
+	}
+
+	sessionTokenResponse, err := bosClient.GetSessionToken(req, nil)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		option := &bce.SignOption{
+			Credentials: bce.NewCredentials(sessionTokenResponse.AccessKeyId, sessionTokenResponse.SecretAccessKey),
+			Headers:     map[string]string{"x-bce-security-token": sessionTokenResponse.SessionToken},
+		}
+		putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, nil, option)
+
+		if err != nil {
+			log.Println(err)
+		} else {
+			fmt.Println(putObjectResponse.GetETag())
+		}
+	}
+}
+
 func deleteObject() {
 	bucketName := "baidubce-sdk-go"
 
-	objectKey := "put-object-from-string.txt"
+	objectKey := "examples/put-object-from-string.txt"
 	str := "Hello World 你好"
 
 	option := new(bce.SignOption)
@@ -490,7 +509,7 @@ func generatePresignedUrl() {
 func appendObject() {
 	bucketName := "baidubce-sdk-go"
 
-	objectKey := "append-object-from-string.txt"
+	objectKey := "examples/append-object-from-string.txt"
 	str := "Hello World 你好"
 	offset := 0
 
@@ -849,7 +868,7 @@ func deleteBucketCors() {
 
 func optionsObject() {
 	bucketName := "baidubce-sdk-go"
-	objectKey := "put-object-from-file"
+	objectKey := "examples/put-object-from-file"
 
 	resp, err := bosClient.OptionsObject(bucketName, objectKey, "http://www.example.com", "GET", "x-bce-test")
 
@@ -892,7 +911,8 @@ func deleteBucketLogging() {
 }
 
 func RunBosExamples() {
-	listBuckets()
+	putObjectBySTS()
+	//listBuckets()
 	return
 	//abortAllMultipartUpload("docker-registry-me-test")
 	deleteBucketLogging()

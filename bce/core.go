@@ -18,6 +18,8 @@
 package bce
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -168,6 +170,7 @@ type SignOption struct {
 	ExpirationPeriodInSeconds int
 	Headers                   map[string]string
 	HeadersToSign             []string
+	Credentials               *Credentials // for STS(Security Token Service) only
 	headersToSignSpecified    bool
 	initialized               bool
 }
@@ -177,7 +180,7 @@ func NewSignOption(timestamp string, expirationPeriodInSeconds int,
 	headers map[string]string, headersToSign []string) *SignOption {
 
 	return &SignOption{timestamp, expirationPeriodInSeconds,
-		headers, headersToSign, len(headersToSign) > 0, false}
+		headers, headersToSign, nil, len(headersToSign) > 0, false}
 }
 
 func CheckSignOption(option *SignOption) *SignOption {
@@ -370,6 +373,77 @@ func (c *Client) GetURL(host, uriPath string, params map[string]string) string {
 	return util.GetURL(c.Protocol, host, uriPath, params)
 }
 
+type SessionTokenRequest struct {
+	DurationSeconds   int                     `json:"durationSeconds"`
+	Id                string                  `json:"id"`
+	AccessControlList []AccessControlListItem `json:"accessControlList"`
+}
+
+type AccessControlListItem struct {
+	Eid        string   `json:"eid"`
+	Service    string   `json:"service"`
+	Region     string   `json:"region"`
+	Effect     string   `json:"effect"`
+	Resource   []string `json:"resource"`
+	Permission []string `json:"permission"`
+}
+
+type SessionTokenResponse struct {
+	AccessKeyId     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	SessionToken    string `json:"sessionToken"`
+	CreateTime      string `json:"createTime"`
+	Expiration      string `json:"expiration"`
+	UserId          string `json:"userId"`
+}
+
+func (c *Client) GetSessionToken(sessionTokenRequest SessionTokenRequest,
+	option *SignOption) (*SessionTokenResponse, error) {
+
+	var params map[string]string
+
+	if sessionTokenRequest.DurationSeconds > 0 {
+		params = map[string]string{"durationSeconds": strconv.Itoa(sessionTokenRequest.DurationSeconds)}
+	}
+
+	body, err := util.ToJson(sessionTokenRequest, "id", "accessControlList")
+
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := NewRequest(http.MethodPost, c.GetURL("sts.bj.baidubce.com", "v1/sessionToken", params), bytes.NewReader(body))
+
+	if err != nil {
+		return nil, err
+	}
+
+	option = CheckSignOption(option)
+	option.AddHeader("Content-Type", "application/json")
+	option.AddHeadersToSign("date")
+
+	resp, err := c.SendRequest(req, option)
+
+	if err != nil {
+		return nil, err
+	}
+
+	bodyContent, err := resp.GetBodyContent()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var sessionTokenResponse *SessionTokenResponse
+	err = json.Unmarshal(bodyContent, &sessionTokenResponse)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return sessionTokenResponse, nil
+}
+
 // SendRequest sends a http request to the endpoint of baidubce api.
 func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Response, err error) {
 	if option == nil {
@@ -385,7 +459,11 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Res
 	for i := 0; ; i++ {
 		bceResponse, err = nil, nil
 
-		GenerateAuthorization(*c.Credentials, *req, option)
+		if option.Credentials != nil {
+			GenerateAuthorization(*option.Credentials, *req, option)
+		} else {
+			GenerateAuthorization(*c.Credentials, *req, option)
+		}
 
 		if c.debug {
 			util.Debug("", fmt.Sprintf("Request: httpMethod = %s, requestUrl = %s, requestHeader = %v",
@@ -395,12 +473,27 @@ func (c *Client) SendRequest(req *Request, option *SignOption) (bceResponse *Res
 		resp, httpError := c.httpClient.Do(req.raw())
 
 		if c.debug {
+			statusCode := -1
+
+			if resp != nil {
+				statusCode = resp.StatusCode
+			}
+
 			util.Debug("", fmt.Sprintf("Response: status code = %d, httpMethod = %s, requestUrl = %s",
-				resp.StatusCode, req.Method, req.URL.String()))
+				statusCode, req.Method, req.URL.String()))
 		}
 
 		if httpError != nil {
-			continue
+			duration := c.RetryPolicy.GetDelayBeforeNextRetry(httpError, i+1)
+
+			if duration <= 0 {
+				err = httpError
+				return
+			} else {
+				time.Sleep(duration)
+				continue
+			}
+
 		}
 
 		bceResponse = NewResponse(resp)

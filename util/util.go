@@ -47,9 +47,13 @@ func GetURL(protocol, host, uriPath string, params map[string]string) string {
 		uriPath = uriPath[1:]
 	}
 
-	url := fmt.Sprintf("%s/%s?%s", HostToURL(host, protocol), uriPath, ToCanonicalQueryString(params))
+	query := strings.Trim(ToCanonicalQueryString(params), " ")
 
-	return url
+	if query == "" {
+		return fmt.Sprintf("%s/%s", HostToURL(host, protocol), uriPath)
+	}
+
+	return fmt.Sprintf("%s/%s?%s", HostToURL(host, protocol), uriPath, query)
 }
 
 // GetURIPath returns the path part of URI.

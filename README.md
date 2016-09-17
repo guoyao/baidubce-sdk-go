@@ -252,6 +252,76 @@ func MultipartUploadFromFile() {
 }
 ```
 
+### GetSessionToken 
+
+```go
+func GetSessionToken() {
+	req := bce.SessionTokenRequest{
+		DurationSeconds: 600,
+		Id:              "ef5a4b19192f4931adcf0e12f82795e2",
+		AccessControlList: []bce.AccessControlListItem{
+			bce.AccessControlListItem{
+				Service:    "bce:bos",
+				Region:     "bj",
+				Effect:     "Allow",
+				Resource:   []string{"baidubce-sdk-go/*"},
+				Permission: []string{"READ"},
+			},
+		},
+	}
+
+	sessionTokenResponse, err := bceClient.GetSessionToken(req, nil)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Println(sessionTokenResponse)
+	}
+}
+```
+
+### putObjectBySTS
+
+```go
+func putObjectBySTS() {
+	bucketName := "baidubce-sdk-go"
+	objectKey := "examples/put-object-from-string.txt"
+	str := "Hello World 你好"
+
+	req := bce.SessionTokenRequest{
+		DurationSeconds: 600,
+		Id:              "ef5a4b19192f4931adcf0e12f82795e2",
+		AccessControlList: []bce.AccessControlListItem{
+			bce.AccessControlListItem{
+				Service:    "bce:bos",
+				Region:     "bj",
+				Effect:     "Allow",
+				Resource:   []string{bucketName + "/*"},
+				Permission: []string{"READ", "WRITE"},
+			},
+		},
+	}
+
+	sessionTokenResponse, err := bosClient.GetSessionToken(req, nil)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		option := &bce.SignOption{
+			Credentials: bce.NewCredentials(sessionTokenResponse.AccessKeyId, sessionTokenResponse.SecretAccessKey),
+			Headers:     map[string]string{"x-bce-security-token": sessionTokenResponse.SessionToken},
+		}
+		putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, nil, option)
+
+		if err != nil {
+			log.Println(err)
+		} else {
+			fmt.Println(putObjectResponse.GetETag())
+		}
+	}
+}
+```
+
 ### Others
 
 More api usages please refer
