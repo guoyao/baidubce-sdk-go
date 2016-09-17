@@ -860,10 +860,44 @@ func optionsObject() {
 	}
 }
 
+func setBucketLogging() {
+	bucketName := "baidubce-sdk-go"
+	targetBucket := "bucket-logs"
+	targetPrefix := "baidubce-sdk-go"
+	err := bosClient.SetBucketLogging(bucketName, targetBucket, targetPrefix, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func getBucketLogging() {
+	bucketName := "baidubce-sdk-go"
+	bucketLogging, err := bosClient.GetBucketLogging(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Println(bucketLogging)
+	}
+}
+
+func deleteBucketLogging() {
+	bucketName := "baidubce-sdk-go"
+	err := bosClient.DeleteBucketLogging(bucketName, nil)
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func RunBosExamples() {
 	listBuckets()
 	return
 	//abortAllMultipartUpload("docker-registry-me-test")
+	deleteBucketLogging()
+	getBucketLogging()
+	setBucketLogging()
 	optionsObject()
 	deleteBucketCors()
 	setBucketCors()

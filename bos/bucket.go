@@ -432,6 +432,12 @@ type BucketCorsItem struct {
 	MaxAgeSeconds        int      `json:"maxAgeSeconds"`
 }
 
+type BucketLogging struct {
+	Status       string `json:"status"`
+	TargetBucket string `json:"targetBucket"`
+	TargetPrefix string `json:"targetPrefix"`
+}
+
 func IsUserDefinedMetadata(metadata string) bool {
 	return strings.Index(metadata, UserDefinedMetadataPrefix) == 0
 }

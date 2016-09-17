@@ -883,6 +883,89 @@ func TestOptionsObject(t *testing.T) {
 	})
 }
 
+func TestSetBucketLogging(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-logging-"
+	targetBucket := "baidubce-sdk-go-test-for-set-bucket-logging-logs"
+	targetPrefix := "baidubce-sdk-go"
+	method := "SetBucketLogging"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		defer bosClient.DeleteBucket(targetBucket, nil)
+
+		err := bosClient.CreateBucket(targetBucket, nil)
+
+		if err != nil {
+			t.Error(util.FormatTest(method+":CreateBucket", err.Error(), "nil"))
+		} else {
+			err = bosClient.SetBucketLogging(bucketName, targetBucket, targetPrefix, nil)
+
+			if err != nil {
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
+			}
+		}
+	})
+}
+
+func TestGetBucketLogging(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-get-bucket-logging-"
+	targetBucket := "baidubce-sdk-go-test-for-get-bucket-logging-logs"
+	targetPrefix := "baidubce-sdk-go"
+	method := "GetBucketLogging"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		defer bosClient.DeleteBucket(targetBucket, nil)
+
+		err := bosClient.CreateBucket(targetBucket, nil)
+
+		if err != nil {
+			t.Error(util.FormatTest(method+":CreateBucket", err.Error(), "nil"))
+		} else {
+			err = bosClient.SetBucketLogging(bucketName, targetBucket, targetPrefix, nil)
+
+			if err != nil {
+				t.Error(util.FormatTest(method+":SetBucketLogging", err.Error(), "nil"))
+			} else {
+				bucketLogging, err := bosClient.GetBucketLogging(bucketName, nil)
+
+				if err != nil {
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
+				} else if bucketLogging.Status != "enabled" {
+					t.Error(util.FormatTest(method, bucketLogging.Status, "enabled"))
+				}
+			}
+		}
+	})
+}
+
+func TestDeleteBucketLogging(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-delete-bucket-logging-"
+	targetBucket := "baidubce-sdk-go-test-for-delete-bucket-logging-logs"
+	targetPrefix := "baidubce-sdk-go"
+	method := "DeleteBucketLogging"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		defer bosClient.DeleteBucket(targetBucket, nil)
+
+		err := bosClient.CreateBucket(targetBucket, nil)
+
+		if err != nil {
+			t.Error(util.FormatTest(method+":CreateBucket", err.Error(), "nil"))
+		} else {
+			err := bosClient.SetBucketLogging(bucketName, targetBucket, targetPrefix, nil)
+
+			if err != nil {
+				t.Error(util.FormatTest(method+":SetBucketLogging", err.Error(), "nil"))
+			} else {
+				err := bosClient.DeleteBucketLogging(bucketName, nil)
+
+				if err != nil {
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
+				}
+			}
+		}
+	})
+}
+
 func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}, f func(string)) {
 	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
 	err := bosClient.CreateBucket(bucketName, nil)

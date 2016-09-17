@@ -1172,6 +1172,78 @@ func (c *Client) OptionsObject(bucketName, objectKey, origin, accessControlReque
 	return c.SendRequest(req, option)
 }
 
+func (c *Client) SetBucketLogging(bucketName, targetBucket, targetPrefix string, option *bce.SignOption) error {
+	params := map[string]string{"logging": ""}
+	body, err := util.ToJson(map[string]string{
+		"targetBucket": targetBucket,
+		"targetPrefix": targetPrefix,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	req, err := bce.NewRequest(http.MethodPut, c.GetURL(bucketName, "", params), bytes.NewReader(body))
+
+	if err != nil {
+		return err
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	_, err = c.SendRequest(req, option)
+
+	return err
+}
+
+func (c *Client) GetBucketLogging(bucketName string, option *bce.SignOption) (*BucketLogging, error) {
+	params := map[string]string{"logging": ""}
+	req, err := bce.NewRequest(http.MethodGet, c.GetURL(bucketName, "", params), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	option = bce.CheckSignOption(option)
+	option.AddHeadersToSign("date")
+
+	resp, err := c.SendRequest(req, option)
+
+	if err != nil {
+		return nil, err
+	}
+
+	bodyContent, err := resp.GetBodyContent()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var bucketLogging *BucketLogging
+
+	err = json.Unmarshal(bodyContent, &bucketLogging)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bucketLogging, nil
+}
+
+func (c *Client) DeleteBucketLogging(bucketName string, option *bce.SignOption) error {
+	params := map[string]string{"logging": ""}
+	req, err := bce.NewRequest(http.MethodDelete, c.GetURL(bucketName, "", params), nil)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = c.SendRequest(req, option)
+
+	return err
+}
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest(http.MethodPut, c.GetURL(bucketName, "", params), nil)
