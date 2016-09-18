@@ -39,8 +39,11 @@ func TestGetMD5(t *testing.T) {
 }
 
 func TestTimeToUTCString(t *testing.T) {
-	expected := "2015-11-16T07:33:15Z"
+	expected := "2015-11-16T15:33:15Z"
 	datetime, _ := time.Parse(time.RFC1123, "Mon, 16 Nov 2015 15:33:15 CST")
+	_, offset := datetime.Zone()
+	offset = offset / 3600
+	datetime = datetime.Add(time.Duration(offset) * time.Hour)
 	utc := TimeToUTCString(datetime)
 
 	if utc != expected {

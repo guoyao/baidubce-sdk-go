@@ -402,7 +402,7 @@ func TempFile(content []byte, dir, prefix string) (*os.File, error) {
 	}
 
 	if !CheckFileExists(dir) {
-		err := os.MkdirAll(dir, 0644)
+		err := os.MkdirAll(dir, 0744)
 
 		if err != nil {
 			return nil, err
