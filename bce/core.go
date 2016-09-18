@@ -326,7 +326,6 @@ func newHttpClient(config *Config) *http.Client {
 		transport.Proxy = defaultTransport.Proxy
 		transport.Dial = defaultTransport.Dial
 		transport.TLSHandshakeTimeout = defaultTransport.TLSHandshakeTimeout
-		transport.ExpectContinueTimeout = defaultTransport.ExpectContinueTimeout
 	}
 
 	if config.ProxyHost != "" {
@@ -412,7 +411,7 @@ func (c *Client) GetSessionToken(sessionTokenRequest SessionTokenRequest,
 		return nil, err
 	}
 
-	req, err := NewRequest(http.MethodPost, c.GetURL("sts.bj.baidubce.com", "v1/sessionToken", params), bytes.NewReader(body))
+	req, err := NewRequest("POST", c.GetURL("sts.bj.baidubce.com", "v1/sessionToken", params), bytes.NewReader(body))
 
 	if err != nil {
 		return nil, err

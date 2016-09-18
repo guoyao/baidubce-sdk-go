@@ -1,6 +1,6 @@
 # baidubce-sdk-go
 
-Unofficial Go SDK for Baidu Cloud Engine
+Unofficial Go SDK for Baidu Cloud Engine（support go 1.3+）
 
 1. BOS (Baidu Object Storage)
 
@@ -254,7 +254,7 @@ func MultipartUploadFromFile() {
 }
 ```
 
-### GetSessionToken 
+### GetSessionToken
 
 ```go
 func GetSessionToken() {
