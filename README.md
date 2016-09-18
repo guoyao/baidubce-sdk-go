@@ -6,6 +6,8 @@ Unofficial Go SDK for Baidu Cloud Engine
 
 <http://bce.baidu.com/index.html>
 
+[![Build Status](https://api.travis-ci.org/guoyao/baidubce-sdk-go.png)](http://travis-ci.org/guoyao/baidubce-sdk-go)
+
 ## Install
 
 ```

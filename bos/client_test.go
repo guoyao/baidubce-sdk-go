@@ -22,7 +22,6 @@ var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU
 var bceConfig = &bce.Config{
 	Credentials: credentials,
 	Checksum:    true,
-	//Protocol:    "https",
 }
 var bosConfig = NewConfig(bceConfig)
 var bosClient = NewClient(bosConfig)

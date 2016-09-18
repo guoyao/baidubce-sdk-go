@@ -15,20 +15,16 @@ var bceConfig = &bce.Config{
 	Credentials: credentials,
 	Checksum:    true,
 	//Protocol:    "https",
+	//ProxyHost:      "xxxxx",
+	//ProxyPort:      8080,
+	//MaxConnections: 10,
+	//Timeout:        15 * time.Second,
 }
 
 var bceClient = bce.NewClient(bceConfig)
 
 func init() {
 	bceClient.SetDebug(true)
-
-	/*
-		bceConfig.Endpoint = "baidubce-sdk-go.bj.bcebos.com"
-		bceConfig.ProxyHost = "agent.baidu.com"
-		bceConfig.ProxyPort = 8118
-		bceConfig.MaxConnections = 6
-		bceConfig.Timeout = 6 * time.Second
-	*/
 }
 
 func getSessionToken() {
