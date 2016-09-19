@@ -2,15 +2,40 @@ package util
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
 
-const URI string = "http://bos.cn-n1.baidubce.com/v1/example/测试"
+func TestGetURL(t *testing.T) {
+	expected := "http://bos.cn-n1.baidubce.com/v1/example/测试"
+	url := GetURL("", "bos.cn-n1.baidubce.com", "v1/example/测试", nil)
+
+	if url != expected {
+		t.Error(FormatTest("GetURL", url, expected))
+	}
+
+	expected = expected + "?id=123&name=abc"
+	params := map[string]string{"id": "123", "name": "abc"}
+	url = GetURL("", "bos.cn-n1.baidubce.com", "v1/example/测试", params)
+
+	if url != expected {
+		t.Error(FormatTest("GetURL", url, expected))
+	}
+
+	expected = "https://bos.cn-n1.baidubce.com/v1/example/测试" + "?id=123&name=abc"
+	url = GetURL("https", "bos.cn-n1.baidubce.com", "v1/example/测试", params)
+
+	if url != expected {
+		t.Error(FormatTest("GetURL", url, expected))
+	}
+}
 
 func TestGetURIPath(t *testing.T) {
+	const URI string = "http://bos.cn-n1.baidubce.com/v1/example/测试"
 	expected := "/v1/example/测试"
 	path := GetURIPath(URI)
 
@@ -20,6 +45,7 @@ func TestGetURIPath(t *testing.T) {
 }
 
 func TestURIEncodeExceptSlash(t *testing.T) {
+	const URI string = "http://bos.cn-n1.baidubce.com/v1/example/测试"
 	expected := "/v1/example/%E6%B5%8B%E8%AF%95"
 	path := GetURIPath(URI)
 	path = URIEncodeExceptSlash(path)
@@ -29,12 +55,168 @@ func TestURIEncodeExceptSlash(t *testing.T) {
 	}
 }
 
+func TestHmacSha256Hex(t *testing.T) {
+	expected := "6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a"
+	encrypted := HmacSha256Hex("key", "message")
+
+	if encrypted != expected {
+		t.Error(FormatTest("HmacSha256Hex", encrypted, expected))
+	}
+}
+
 func TestGetMD5(t *testing.T) {
 	expected := "de22e061b93b832dd8af907ca9002fd7"
 	result := GetMD5("baidubce-sdk-go", false)
 
 	if result != expected {
 		t.Error(FormatTest("GetMD5", result, expected))
+	}
+}
+
+func TestGetSha256(t *testing.T) {
+	expected := "b39aa8e24bcfc4b20c77f7ab36021e5c23cce79df034279ca9991e0472368b89"
+	result := GetSha256("baidubce-sdk-go")
+
+	if result != expected {
+		t.Error(FormatTest("GetSha256", result, expected))
+	}
+}
+
+func TestBase64Encode(t *testing.T) {
+	expected := "YmFpZHViY2Utc2RrLWdv"
+	result := Base64Encode([]byte("baidubce-sdk-go"))
+
+	if result != expected {
+		t.Error(FormatTest("Base64Encode", result, expected))
+	}
+}
+
+func TestContains(t *testing.T) {
+	expected := true
+	arr := []string{"abc", "XYz"}
+	result := Contains(arr, "abc", true)
+
+	if result != expected {
+		t.Error(FormatTest("Contains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+
+	expected = false
+	result = Contains(arr, "Abc", false)
+
+	if result != expected {
+		t.Error(FormatTest("Contains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+
+	expected = true
+	result = Contains(arr, "xyz", true)
+
+	if result != expected {
+		t.Error(FormatTest("Contains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+
+	result = Contains(arr, "Xyz", true)
+
+	if result != expected {
+		t.Error(FormatTest("Contains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+
+	result = Contains(arr, "xYZ", true)
+
+	if result != expected {
+		t.Error(FormatTest("Contains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+
+	result = Contains(arr, "XYZ", true)
+
+	if result != expected {
+		t.Error(FormatTest("Contains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+}
+
+func TestMapContains(t *testing.T) {
+	expected := true
+	m := map[string]string{"id": "123", "name": "Matt"}
+	result := MapContains(m, func(key, value string) bool {
+		return key == "id"
+	})
+
+	if result != expected {
+		t.Error(FormatTest("MapContains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+
+	result = MapContains(m, func(key, value string) bool {
+		return value == "123"
+	})
+
+	if result != expected {
+		t.Error(FormatTest("MapContains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+
+	expected = false
+	result = MapContains(m, func(key, value string) bool {
+		return value == "matt"
+	})
+
+	if result != expected {
+		t.Error(FormatTest("MapContains", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+}
+
+func TestGetMapKey(t *testing.T) {
+	expected := "id"
+	m := map[string]string{"id": "123", "Name": "Matt"}
+	result := GetMapKey(m, "id", true)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapKey", result, expected))
+	}
+
+	result = GetMapKey(m, "id", false)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapKey", result, expected))
+	}
+
+	result = GetMapKey(m, "Id", true)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapKey", result, expected))
+	}
+
+	expected = ""
+	result = GetMapKey(m, "Id", false)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapKey", result, expected))
+	}
+}
+
+func TestGetMapValue(t *testing.T) {
+	expected := "123"
+	m := map[string]string{"id": "123", "Name": "Matt"}
+	result := GetMapValue(m, "id", true)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapValue", result, expected))
+	}
+
+	result = GetMapValue(m, "id", false)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapValue", result, expected))
+	}
+
+	result = GetMapValue(m, "Id", true)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapValue", result, expected))
+	}
+
+	expected = ""
+	result = GetMapValue(m, "Id", false)
+
+	if result != expected {
+		t.Error(FormatTest("GetMapValue", result, expected))
 	}
 }
 
@@ -196,6 +378,95 @@ func TestCheckFileExists(t *testing.T) {
 
 	if result != expected {
 		t.Error(FormatTest("CheckFileExists", strconv.FormatBool(result), strconv.FormatBool(expected)))
+	}
+}
+
+func TestTempFileWithSize(t *testing.T) {
+	var size int64 = 1024
+	f, err := TempFileWithSize(size)
+
+	defer func() {
+		f.Close()
+		os.Remove(f.Name())
+	}()
+
+	if err != nil {
+		t.Error(FormatTest("TempFileWithSize", err.Error(), "nil"))
+	} else {
+		stat, err := f.Stat()
+
+		if err != nil {
+			t.Error(FormatTest("TempFileWithSize", err.Error(), "nil"))
+		} else if stat.Size() != size {
+			t.Error(FormatTest("TempFileWithSize", strconv.FormatInt(stat.Size(), 10), strconv.FormatInt(size, 10)))
+		}
+	}
+}
+
+func TestTempFile(t *testing.T) {
+	content := "hello"
+	f, err := TempFile([]byte(content), "", "")
+
+	defer func() {
+		f.Close()
+		os.Remove(f.Name())
+	}()
+
+	if err != nil {
+		t.Error(FormatTest("TempFile", err.Error(), "nil"))
+	} else {
+		byteArray, err := ioutil.ReadAll(f)
+
+		if err != nil {
+			t.Error(FormatTest("TempFile", err.Error(), "nil"))
+		} else if string(byteArray) != content {
+			t.Error(FormatTest("TempFile", string(byteArray), content))
+		}
+	}
+}
+
+func TestHomeDir(t *testing.T) {
+	home, err := HomeDir()
+
+	if err != nil {
+		t.Error(FormatTest("HomeDir", err.Error(), "nil"))
+	} else if home == "" {
+		t.Error(FormatTest("HomeDir", home, "non empty path"))
+	}
+}
+
+func TestDirUnix(t *testing.T) {
+	home, err := dirUnix()
+
+	if err != nil {
+		t.Error(FormatTest("dirUnix", err.Error(), "nil"))
+	} else if home == "" {
+		t.Error(FormatTest("dirUnix", home, "non empty path"))
+	}
+}
+
+func TestDirWindows(t *testing.T) {
+	home, err := dirWindows()
+
+	if err != nil {
+		t.Error(FormatTest("dirWindows", err.Error(), "nil"))
+	} else if home == "" {
+		t.Error(FormatTest("dirWindows", home, "non empty path"))
+	}
+}
+
+/*
+func TestDebug(t *testing.T) {
+	Debug("title", "detail")
+}
+*/
+
+func TestFormatTest(t *testing.T) {
+	expected := "funcName failed. Got a, expected b"
+	str := FormatTest("funcName", "a", "b")
+
+	if str != expected {
+		t.Error(FormatTest("FormatTest", str, expected))
 	}
 }
 
