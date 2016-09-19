@@ -885,7 +885,12 @@ func TestOptionsObject(t *testing.T) {
 
 func TestSetBucketLogging(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-logging-"
-	targetBucket := "baidubce-sdk-go-test-for-set-bucket-logging-logs"
+	targetBucket := "baidubce-sdk-go-test-for-set-bucket-logging-logs" + strconv.Itoa(int(time.Now().UnixNano()))
+
+	if len(targetBucket) > 63 {
+		targetBucket = targetBucket[:63]
+	}
+
 	targetPrefix := "baidubce-sdk-go"
 	method := "SetBucketLogging"
 
@@ -908,7 +913,12 @@ func TestSetBucketLogging(t *testing.T) {
 
 func TestGetBucketLogging(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-get-bucket-logging-"
-	targetBucket := "baidubce-sdk-go-test-for-get-bucket-logging-logs"
+	targetBucket := "baidubce-sdk-go-test-for-get-bucket-logging-logs" + strconv.Itoa(int(time.Now().UnixNano()))
+
+	if len(targetBucket) > 63 {
+		targetBucket = targetBucket[:63]
+	}
+
 	targetPrefix := "baidubce-sdk-go"
 	method := "GetBucketLogging"
 
@@ -939,7 +949,12 @@ func TestGetBucketLogging(t *testing.T) {
 
 func TestDeleteBucketLogging(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-delete-bucket-logging-"
-	targetBucket := "baidubce-sdk-go-test-for-delete-bucket-logging-logs"
+	targetBucket := "baidubce-sdk-go-test-for-delete-bucket-logging-logs" + strconv.Itoa(int(time.Now().UnixNano()))
+
+	if len(targetBucket) > 63 {
+		targetBucket = targetBucket[:63]
+	}
+
 	targetPrefix := "baidubce-sdk-go"
 	method := "DeleteBucketLogging"
 
@@ -1007,7 +1022,11 @@ func TestPubObjectBySTS(t *testing.T) {
 }
 
 func around(t *testing.T, method, bucketNamePrefix string, objectKey interface{}, f func(string)) {
-	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().Unix()))
+	bucketName := bucketNamePrefix + strconv.Itoa(int(time.Now().UnixNano()))
+	if len(bucketName) > 63 {
+		bucketName = bucketName[:63]
+	}
+
 	err := bosClient.CreateBucket(bucketName, nil)
 
 	if err != nil {
