@@ -411,7 +411,13 @@ func (c *Client) GetSessionToken(sessionTokenRequest SessionTokenRequest,
 		return nil, err
 	}
 
-	req, err := NewRequest("POST", c.GetURL("sts.bj.baidubce.com", "v1/sessionToken", params), bytes.NewReader(body))
+	uriPath := "sessionToken"
+
+	if c.APIVersion == "" {
+		uriPath = "v1/" + uriPath
+	}
+
+	req, err := NewRequest("POST", c.GetURL("sts.bj.baidubce.com", uriPath, params), bytes.NewReader(body))
 
 	if err != nil {
 		return nil, err

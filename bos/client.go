@@ -68,12 +68,6 @@ func checkObjectKey(objectKey string) {
 
 // GetBucketName returns the actual name of bucket.
 func (c *Client) GetBucketName(bucketName string) string {
-	if c.Endpoint != "" && !util.MapContains(Endpoint, func(key, value string) bool {
-		return strings.ToLower(value) == strings.ToLower(c.Endpoint)
-	}) {
-		bucketName = ""
-	}
-
 	return bucketName
 }
 
@@ -82,10 +76,10 @@ func (c *Client) GetURL(bucketName, objectKey string, params map[string]string) 
 
 	if host == "" {
 		host = Endpoint[c.GetRegion()]
+	}
 
-		if bucketName != "" {
-			host = bucketName + "." + host
-		}
+	if bucketName != "" {
+		host = bucketName + "." + host
 	}
 
 	uriPath := objectKey
