@@ -47,7 +47,8 @@ func TestSign(t *testing.T) {
 }
 
 func TestGenerateAuthorization(t *testing.T) {
-	expected := "bce-auth-v1/0b0f67dfb88244b289b72b142befad0c/2015-04-27T08:23:49Z/1800//a19e6386e990691aca1114a20357c83713f1cb4be3d74942bb4ed37469ecdacf"
+	expected := "bce-auth-v1/0b0f67dfb88244b289b72b142befad0c/2015-04-27T08:23:49Z/1800/content-length;content-md5;" +
+		"content-type;host;x-bce-date/a19e6386e990691aca1114a20357c83713f1cb4be3d74942bb4ed37469ecdacf"
 	req := getRequest()
 	authorization := GenerateAuthorization(credentials, *req, defaultSignOption)
 	if authorization != expected {

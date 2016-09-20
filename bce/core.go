@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -230,6 +231,12 @@ func (option *SignOption) AddHeaders(headers map[string]string) {
 }
 
 func (option *SignOption) init() {
+	if option.initialized {
+		return
+	}
+
+	option.headersToSignSpecified = len(option.HeadersToSign) > 0
+
 	if option.Timestamp == "" {
 		option.Timestamp = util.TimeToUTCString(time.Now())
 	}
@@ -242,10 +249,6 @@ func (option *SignOption) init() {
 		option.Headers = make(map[string]string, 3)
 	} else {
 		util.MapKeyToLower(option.Headers)
-	}
-
-	if !option.initialized {
-		option.headersToSignSpecified = len(option.HeadersToSign) > 0
 	}
 
 	util.SliceToLower(option.HeadersToSign)
@@ -263,7 +266,7 @@ func (option *SignOption) init() {
 		} else {
 			option.Headers["date"] = util.TimeStringToRFC1123(util.GetMapValue(option.Headers, "date", true))
 		}
-	} else if util.Contains(option.HeadersToSign, "x-bce-date", true) {
+	} else {
 		if !util.MapContains(option.Headers, generateHeaderValidCompareFunc("x-bce-date")) {
 			option.Headers["x-bce-date"] = option.Timestamp
 		}
@@ -273,17 +276,21 @@ func (option *SignOption) init() {
 }
 
 func (option *SignOption) signedHeadersToString() string {
-	var result string
-	length := len(option.HeadersToSign)
+	headers := make([]string, 0, int(math.Max(float64(len(option.Headers)), float64(len(option.HeadersToSign)))))
 
-	if option.headersToSignSpecified && length > 0 {
-		headers := make([]string, 0, length)
+	if option.headersToSignSpecified {
 		headers = append(headers, option.HeadersToSign...)
-		sort.Strings(headers)
-		result = strings.Join(headers, ";")
+	} else {
+		for key, _ := range option.Headers {
+			if isCanonicalHeader(key) {
+				headers = append(headers, key)
+			}
+		}
 	}
 
-	return result
+	sort.Strings(headers)
+
+	return strings.Join(headers, ";")
 }
 
 // GenerateAuthorization returns authorization code of baidubce api.
@@ -425,7 +432,6 @@ func (c *Client) GetSessionToken(sessionTokenRequest SessionTokenRequest,
 
 	option = CheckSignOption(option)
 	option.AddHeader("Content-Type", "application/json")
-	option.AddHeadersToSign("date")
 
 	resp, err := c.SendRequest(req, option)
 

@@ -158,9 +158,6 @@ func (c *Client) CreateBucket(bucketName string, option *bce.SignOption) error {
 		return err
 	}
 
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	_, err = c.SendRequest(req, option)
 
 	return err
@@ -255,9 +252,6 @@ func (c *Client) SetBucketAcl(bucketName string, bucketAcl BucketAcl, option *bc
 		return err
 	}
 
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	_, err = c.SendRequest(req, option)
 
 	return err
@@ -287,7 +281,6 @@ func (c *Client) PutObject(bucketName, objectKey string, data interface{},
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if c.Checksum {
@@ -365,9 +358,6 @@ func (c *Client) DeleteMultipleObjects(bucketName string, objectKeys []string,
 	if err != nil {
 		return nil, err
 	}
-
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 
 	resp, err := c.SendRequest(req, option)
 
@@ -475,7 +465,6 @@ func (c *Client) CopyObjectFromRequest(copyObjectRequest CopyObjectRequest,
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 
 	source := util.URIEncodeExceptSlash(fmt.Sprintf("/%s/%s", copyObjectRequest.SrcBucketName,
 		copyObjectRequest.SrcKey))
@@ -617,7 +606,7 @@ func (c *Client) GeneratePresignedUrl(bucketName, objectKey string, option *bce.
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("host")
+	option.HeadersToSign = []string{"host"}
 
 	authorization := bce.GenerateAuthorization(*c.Credentials, *req, option)
 	url := fmt.Sprintf("%s?authorization=%s", req.URL.String(), util.URLEncode(authorization))
@@ -662,7 +651,6 @@ func (c *Client) AppendObject(bucketName, objectKey string, offset int, data int
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if c.Checksum {
@@ -702,7 +690,6 @@ func (c *Client) InitiateMultipartUpload(initiateMultipartUploadRequest Initiate
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 	option.AddHeader("Content-Type", util.GuessMimeType(objectKey))
 
 	if initiateMultipartUploadRequest.ObjectMetadata != nil {
@@ -760,7 +747,6 @@ func (c *Client) UploadPart(uploadPartRequest UploadPartRequest,
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 	option.AddHeaders(map[string]string{
 		"Content-Length": strconv.FormatInt(uploadPartRequest.PartSize, 10),
 		"Content-Type":   "application/octet-stream",
@@ -803,8 +789,6 @@ func (c *Client) CompleteMultipartUpload(completeMultipartUploadRequest Complete
 		return nil, err
 	}
 
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 	resp, err := c.SendRequest(req, option)
 
 	if err != nil {
@@ -1125,9 +1109,6 @@ func (c *Client) SetBucketCors(bucketName string, bucketCors BucketCors, option 
 		return err
 	}
 
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	_, err = c.SendRequest(req, option)
 
 	return err
@@ -1183,9 +1164,6 @@ func (c *Client) SetBucketLogging(bucketName, targetBucket, targetPrefix string,
 		return err
 	}
 
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
-
 	_, err = c.SendRequest(req, option)
 
 	return err
@@ -1198,9 +1176,6 @@ func (c *Client) GetBucketLogging(bucketName string, option *bce.SignOption) (*B
 	if err != nil {
 		return nil, err
 	}
-
-	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 
 	resp, err := c.SendRequest(req, option)
 
@@ -1247,7 +1222,6 @@ func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.Sign
 	}
 
 	option = bce.CheckSignOption(option)
-	option.AddHeadersToSign("date")
 
 	headers := map[string]string{"x-bce-acl": acl}
 	option.AddHeaders(headers)
