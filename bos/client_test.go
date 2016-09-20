@@ -22,6 +22,7 @@ var credentials = bce.NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU
 var bceConfig = &bce.Config{
 	Credentials: credentials,
 	Checksum:    true,
+	Region:      os.Getenv("BOS_REGION"),
 }
 var bosConfig = NewConfig(bceConfig)
 var bosClient = NewClient(bosConfig)
@@ -994,7 +995,7 @@ func TestPubObjectBySTS(t *testing.T) {
 			AccessControlList: []bce.AccessControlListItem{
 				bce.AccessControlListItem{
 					Service:    "bce:bos",
-					Region:     "bj",
+					Region:     bceConfig.GetRegion(),
 					Effect:     "Allow",
 					Resource:   []string{bucketName + "/*"},
 					Permission: []string{"READ", "WRITE"},

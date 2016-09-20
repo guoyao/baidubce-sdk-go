@@ -15,6 +15,7 @@ var credentials = Credentials{
 var bceConfig = &Config{
 	Credentials: NewCredentials(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK")),
 	Checksum:    true,
+	Region:      os.Getenv("BOS_REGION"),
 }
 
 var bceClient = NewClient(bceConfig)
@@ -63,7 +64,7 @@ func TestGetSessionToken(t *testing.T) {
 		AccessControlList: []AccessControlListItem{
 			AccessControlListItem{
 				Service:    "bce:bos",
-				Region:     "bj",
+				Region:     bceConfig.GetRegion(),
 				Effect:     "Allow",
 				Resource:   []string{"baidubce-sdk-go/*"},
 				Permission: []string{"READ"},
