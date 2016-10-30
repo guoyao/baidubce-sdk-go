@@ -8,6 +8,7 @@ Unofficial Go SDK for Baidu Cloud Engine（support go 1.3+）
 
 [![Build Status](https://api.travis-ci.org/guoyao/baidubce-sdk-go.png)](http://travis-ci.org/guoyao/baidubce-sdk-go)
 [![codecov](https://codecov.io/gh/guoyao/baidubce-sdk-go/branch/master/graph/badge.svg)](https://codecov.io/gh/guoyao/baidubce-sdk-go)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Install
 
