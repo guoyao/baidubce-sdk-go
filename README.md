@@ -1,10 +1,8 @@
 # baidubce-sdk-go
 
-Unofficial Go SDK for Baidu Cloud Engine（support go 1.3+）
+Unofficial Go SDK for [Baidu Cloud Engine](https://cloud.baidu.com/)（support go 1.3+）
 
-1. BOS (Baidu Object Storage)
-
-<http://bce.baidu.com/index.html>
+1. [BOS (Baidu Object Storage)](https://cloud.baidu.com/product/bos.html)
 
 [![Build Status](https://api.travis-ci.org/guoyao/baidubce-sdk-go.png)](http://travis-ci.org/guoyao/baidubce-sdk-go)
 [![codecov](https://codecov.io/gh/guoyao/baidubce-sdk-go/branch/master/graph/badge.svg)](https://codecov.io/gh/guoyao/baidubce-sdk-go)
