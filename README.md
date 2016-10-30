@@ -11,7 +11,7 @@ Unofficial Go SDK for [Baidu Cloud Engine](https://cloud.baidu.com/)（support g
 ## Install
 
 ```
-go get github.com/guoyao/baidubce-sdk-go
+go get github.com/guoyao/baidubce-sdk-go/...
 ```
 ## Run Test
 
@@ -328,12 +328,12 @@ func putObjectBySTS() {
 
 More api usages please refer
 
-* [examples/bos.go](examples/bos.go)
 * [bos/client_test.go](bos/client_test.go)
+* [baidubce-sdk-go-examples](https://github.com/guoyao/baidubce-sdk-go-examples)
 
 ## Authors
 
 **Guoyao Wu**
 
-+ [http://guoyao.me](http://guoyao.me)
-+ [http://github.com/guoyao](http://github.com/guoyao)
++ [https://guoyao.me](https://guoyao.me)
++ [https://github.com/guoyao](https://github.com/guoyao)
