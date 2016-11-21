@@ -4,7 +4,7 @@ Unofficial Go SDK for [Baidu Cloud Engine](https://cloud.baidu.com/)（support g
 
 1. [BOS (Baidu Object Storage)](https://cloud.baidu.com/product/bos.html)
 
-[![Build Status](https://api.travis-ci.org/guoyao/baidubce-sdk-go.png)](http://travis-ci.org/guoyao/baidubce-sdk-go)
+[![Build Status](https://api.travis-ci.org/guoyao/baidubce-sdk-go.png?branch=master)](http://travis-ci.org/guoyao/baidubce-sdk-go)
 [![codecov](https://codecov.io/gh/guoyao/baidubce-sdk-go/branch/master/graph/badge.svg)](https://codecov.io/gh/guoyao/baidubce-sdk-go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
