@@ -12,6 +12,20 @@ func TestGuessMimeType(t *testing.T) {
 		t.Error(FormatTest("GuessMimeType", result, expected))
 	}
 
+	expected = "image/png"
+	result = GuessMimeType(".png")
+
+	if expected != result {
+		t.Error(FormatTest("GuessMimeType", result, expected))
+	}
+
+	expected = "application/octet-stream"
+	result = GuessMimeType("png")
+
+	if expected != result {
+		t.Error(FormatTest("GuessMimeType", result, expected))
+	}
+
 	expected = "application/octet-stream"
 	result = GuessMimeType("examples/test")
 

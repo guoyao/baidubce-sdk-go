@@ -78,28 +78,34 @@ func NewObjectMetadataFromHeader(h http.Header) *ObjectMetadata {
 	objectMetadata := &ObjectMetadata{}
 
 	for key, _ := range h {
-		key = strings.ToLower(key)
+		if len(h[key]) > 0 {
+			lowerKey := strings.ToLower(key)
+			value := h[key][0]
 
-		if key == "cache-control" {
-			objectMetadata.CacheControl = h.Get(key)
-		} else if key == "content-disposition" {
-			objectMetadata.ContentDisposition = h.Get(key)
-		} else if key == "content-length" {
-			length, err := strconv.ParseInt(h.Get(key), 10, 64)
+			if lowerKey == "cache-control" {
+				objectMetadata.CacheControl = value
+			} else if lowerKey == "content-disposition" {
+				objectMetadata.ContentDisposition = value
+			} else if lowerKey == "content-length" {
+				length, err := strconv.ParseInt(value, 10, 64)
 
-			if err == nil {
-				objectMetadata.ContentLength = length
+				if err == nil {
+					objectMetadata.ContentLength = length
+				}
+			} else if lowerKey == "content-range" {
+				objectMetadata.ContentRange = value
+			} else if lowerKey == "content-type" {
+				objectMetadata.ContentType = value
+			} else if lowerKey == "expires" {
+				objectMetadata.Expires = value
+			} else if lowerKey == "etag" {
+				objectMetadata.ETag = strings.Replace(value, "\"", "", -1)
+			} else if IsUserDefinedMetadata(lowerKey) {
+				if objectMetadata.UserMetadata == nil {
+					objectMetadata.UserMetadata = make(map[string]string, 0)
+				}
+				objectMetadata.UserMetadata[key] = h[key][0]
 			}
-		} else if key == "content-range" {
-			objectMetadata.ContentRange = h.Get(key)
-		} else if key == "content-type" {
-			objectMetadata.ContentType = h.Get(key)
-		} else if key == "expires" {
-			objectMetadata.Expires = h.Get(key)
-		} else if key == "etag" {
-			objectMetadata.ETag = strings.Replace(h.Get(key), "\"", "", -1)
-		} else if IsUserDefinedMetadata(key) {
-			objectMetadata.UserMetadata[key] = h.Get(key)
 		}
 	}
 
