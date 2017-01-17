@@ -2,11 +2,15 @@
 
 Unofficial Go SDK for [Baidu Cloud Engine](https://cloud.baidu.com/)（support go 1.3+）
 
-1. [BOS (Baidu Object Storage)](https://cloud.baidu.com/product/bos.html)
-
 [![Build Status](https://api.travis-ci.org/guoyao/baidubce-sdk-go.png?branch=master)](http://travis-ci.org/guoyao/baidubce-sdk-go)
 [![codecov](https://codecov.io/gh/guoyao/baidubce-sdk-go/branch/master/graph/badge.svg)](https://codecov.io/gh/guoyao/baidubce-sdk-go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+## Package Structure
+
+* bos: [Baidu Object Storage](https://cloud.baidu.com/doc/BOS/API.html) [![GoDoc](https://godoc.org/github.com/guoyao/baidubce-sdk-go/bos?status.svg)](https://godoc.org/github.com/guoyao/baidubce-sdk-go/bos)
+* bce: Common library of Baidubce Go SDK [![GoDoc](https://godoc.org/github.com/guoyao/baidubce-sdk-go/bce?status.svg)](https://godoc.org/github.com/guoyao/baidubce-sdk-go/bce)
+* util: Utility helpers [![GoDoc](https://godoc.org/github.com/guoyao/baidubce-sdk-go/util?status.svg)](https://godoc.org/github.com/guoyao/baidubce-sdk-go/util)
 
 ## Install
 
