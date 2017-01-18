@@ -598,6 +598,14 @@ func TestSendRequest(t *testing.T) {
 		t.Error(util.FormatTest("SendRequest", err.Error(), "nil"))
 	}
 
+	url = "http://guoyao.me.no-such-host"
+	request, _ = NewRequest("GET", url, nil)
+	resp, err = client.SendRequest(request, nil)
+
+	if _, ok := err.(*Error); ok {
+		t.Error(util.FormatTest("SendRequest", "bceError", "error"))
+	}
+
 	url = "http://guoyao.me/no-exist-path"
 	request, _ = NewRequest("GET", url, nil)
 	resp, err = client.SendRequest(request, nil)
@@ -622,10 +630,6 @@ func TestSendRequest(t *testing.T) {
 
 	if duration != -1 {
 		t.Error(util.FormatTest("SendRequest", duration.String(), strconv.Itoa(-1)))
-	}
-
-	if _, ok := err.(*Error); !ok {
-		t.Error(util.FormatTest("SendRequest", "error", "bceError"))
 	}
 
 	if bceError, ok := err.(*Error); ok {
