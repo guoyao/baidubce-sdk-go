@@ -1426,6 +1426,173 @@ func TestDeleteBucketLogging(t *testing.T) {
 	})
 }
 
+func TestSetBucketLifecycle(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-set-bucket-lifecycle-"
+	method := "SetBucketLifecycle"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		bucketLifecycle := BucketLifecycle{
+			Rule: []BucketLifecycleItem{
+				BucketLifecycleItem{
+					Id:       "1",
+					Status:   "disabled",
+					Resource: []string{bucketName + "/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "2017-01-30T00:00:00Z"},
+					},
+					Action: BucketLifecycleItemAction{Name: "DeleteObject"},
+				},
+				BucketLifecycleItem{
+					Id:       "2",
+					Status:   "enabled",
+					Resource: []string{bucketName + "/test/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "$(lastModified)+P7D"},
+					},
+					Action: BucketLifecycleItemAction{Name: "Transition", StorageClass: "STANDARD_IA"},
+				},
+				BucketLifecycleItem{
+					Id:       "3",
+					Status:   "enabled",
+					Resource: []string{bucketName + "/multi/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "$(lastModified)+P7D"},
+					},
+					Action: BucketLifecycleItemAction{Name: "AbortMultipartUpload"},
+				},
+			},
+		}
+
+		if err := bosClient.SetBucketLifecycle(bucketName, bucketLifecycle, nil); err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
+		}
+	})
+}
+
+func TestGetBucketLifecycle(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-get-bucket-lifecycle-"
+	method := "GetBucketLifecycle"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		bucketLifecycle := BucketLifecycle{
+			Rule: []BucketLifecycleItem{
+				BucketLifecycleItem{
+					Id:       "1",
+					Status:   "disabled",
+					Resource: []string{bucketName + "/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "2017-01-30T00:00:00Z"},
+					},
+					Action: BucketLifecycleItemAction{Name: "DeleteObject"},
+				},
+				BucketLifecycleItem{
+					Id:       "2",
+					Status:   "enabled",
+					Resource: []string{bucketName + "/test/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "$(lastModified)+P7D"},
+					},
+					Action: BucketLifecycleItemAction{Name: "Transition", StorageClass: "STANDARD_IA"},
+				},
+				BucketLifecycleItem{
+					Id:       "3",
+					Status:   "enabled",
+					Resource: []string{bucketName + "/multi/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "$(lastModified)+P7D"},
+					},
+					Action: BucketLifecycleItemAction{Name: "AbortMultipartUpload"},
+				},
+			},
+		}
+
+		if err := bosClient.SetBucketLifecycle(bucketName, bucketLifecycle, nil); err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
+		} else {
+			gotBucketLifecycle, err := bosClient.GetBucketLifecycle(bucketName, nil)
+
+			if err != nil {
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
+			} else {
+				byteArrayOfBucketLifecycle, err := util.ToJson(bucketLifecycle, "rule")
+				if err != nil {
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
+				} else {
+					byteArrayOfGotBucketLifecycle, err := util.ToJson(gotBucketLifecycle, "rule")
+					if err != nil {
+						t.Error(util.FormatTest(method, err.Error(), "nil"))
+					} else if string(byteArrayOfBucketLifecycle) != string(byteArrayOfGotBucketLifecycle) {
+						t.Error(util.FormatTest(method, string(byteArrayOfBucketLifecycle), string(byteArrayOfGotBucketLifecycle)))
+					}
+				}
+			}
+		}
+	})
+}
+
+func TestDeleteBucketLifecycle(t *testing.T) {
+	bucketNamePrefix := "baidubce-sdk-go-test-for-delete-bucket-lifecycle-"
+	method := "DeleteBucketLifecycle"
+
+	around(t, method, bucketNamePrefix, "", func(bucketName string) {
+		bucketLifecycle := BucketLifecycle{
+			Rule: []BucketLifecycleItem{
+				BucketLifecycleItem{
+					Id:       "1",
+					Status:   "disabled",
+					Resource: []string{bucketName + "/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "2017-01-30T00:00:00Z"},
+					},
+					Action: BucketLifecycleItemAction{Name: "DeleteObject"},
+				},
+				BucketLifecycleItem{
+					Id:       "2",
+					Status:   "enabled",
+					Resource: []string{bucketName + "/test/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "$(lastModified)+P7D"},
+					},
+					Action: BucketLifecycleItemAction{Name: "Transition", StorageClass: "STANDARD_IA"},
+				},
+				BucketLifecycleItem{
+					Id:       "3",
+					Status:   "enabled",
+					Resource: []string{bucketName + "/multi/*"},
+					Condition: BucketLifecycleItemCondition{
+						Time: BucketLifecycleItemConditionTime{DateGreaterThan: "$(lastModified)+P7D"},
+					},
+					Action: BucketLifecycleItemAction{Name: "AbortMultipartUpload"},
+				},
+			},
+		}
+
+		if err := bosClient.SetBucketLifecycle(bucketName, bucketLifecycle, nil); err != nil {
+			t.Error(util.FormatTest(method, err.Error(), "nil"))
+		} else {
+			gotBucketLifecycle, err := bosClient.GetBucketLifecycle(bucketName, nil)
+
+			if err != nil {
+				t.Error(util.FormatTest(method, err.Error(), "nil"))
+			} else if len(gotBucketLifecycle.Rule) != 3 {
+				t.Error(util.FormatTest(method, strconv.Itoa(len(gotBucketLifecycle.Rule)), "3"))
+			} else {
+				err = bosClient.DeleteBucketLifecycle(bucketName, nil)
+				if err != nil {
+					t.Error(util.FormatTest(method, err.Error(), "nil"))
+				} else {
+					_, err := bosClient.GetBucketLifecycle(bucketName, nil)
+					if err == nil {
+						t.Error(util.FormatTest(method, "nil", "error"))
+					} else if bceError, ok := err.(*bce.Error); ok && bceError.StatusCode != 404 {
+						t.Error(util.FormatTest(method, err.Error(), "bce.Error with status code 404"))
+					}
+				}
+			}
+		}
+	})
+}
+
 func TestPubObjectBySTS(t *testing.T) {
 	bucketNamePrefix := "baidubce-sdk-go-test-for-put-object-by-sts-"
 	method := "PutObject"

@@ -527,6 +527,37 @@ type BucketLogging struct {
 	TargetPrefix string `json:"targetPrefix"`
 }
 
+type BucketLifecycle struct {
+	Rule []BucketLifecycleItem `json:"rule"`
+}
+
+// BucketLifecycleRule defined a struct for one item of Lifecycle configuration
+//
+// For details, please refer https://cloud.baidu.com/doc/BOS/API.html#PutBucketlifecycle
+type BucketLifecycleItem struct {
+	Id        string                       `json:"id,omitempty"`
+	Status    string                       `json:"status"`
+	Resource  []string                     `json:"resource"`
+	Condition BucketLifecycleItemCondition `json:"condition"`
+	Action    BucketLifecycleItemAction    `json:"action"`
+}
+
+// For details, please refer https://cloud.baidu.com/doc/BOS/API.html#PutBucketlifecycle
+type BucketLifecycleItemCondition struct {
+	Time BucketLifecycleItemConditionTime `json:"time"`
+}
+
+// For details, please refer https://cloud.baidu.com/doc/BOS/API.html#PutBucketlifecycle
+type BucketLifecycleItemConditionTime struct {
+	DateGreaterThan string `json:"dateGreaterThan"`
+}
+
+// For details, please refer https://cloud.baidu.com/doc/BOS/API.html#PutBucketlifecycle
+type BucketLifecycleItemAction struct {
+	Name         string `json:"name"`
+	StorageClass string `json:"storageClass,omitempty"`
+}
+
 // IsUserDefinedMetadata checks the specified metadata if it is custom metadata.
 func IsUserDefinedMetadata(metadata string) bool {
 	return strings.Index(metadata, UserDefinedMetadataPrefix) == 0

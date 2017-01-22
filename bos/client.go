@@ -1323,6 +1323,78 @@ func (c *Client) DeleteBucketLogging(bucketName string, option *bce.SignOption) 
 	return err
 }
 
+// SetBucketlifecycle set lifecycle configuration of a bucket
+//
+// For details, please refer https://cloud.baidu.com/doc/BOS/API.html#PutBucketlifecycle
+func (c *Client) SetBucketLifecycle(bucketName string, bucketLifecycle BucketLifecycle, option *bce.SignOption) error {
+	byteArray, err := util.ToJson(bucketLifecycle, "rule")
+
+	if err != nil {
+		return err
+	}
+
+	params := map[string]string{"lifecycle": ""}
+	req, err := bce.NewRequest("PUT", c.GetURL(bucketName, "", params), bytes.NewReader(byteArray))
+
+	if err != nil {
+		return err
+	}
+
+	_, err = c.SendRequest(req, option)
+
+	return err
+}
+
+// GetBucketLifecycle gets CORS settings of a BOS Bucket.
+//
+// For details, please refer https://cloud.baidu.com/doc/BOS/API.html#GetLifeCycle
+func (c *Client) GetBucketLifecycle(bucketName string, option *bce.SignOption) (*BucketLifecycle, error) {
+	params := map[string]string{"lifecycle": ""}
+	req, err := bce.NewRequest("GET", c.GetURL(bucketName, "", params), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.SendRequest(req, option)
+
+	if err != nil {
+		return nil, err
+	}
+
+	bodyContent, err := resp.GetBodyContent()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var bucketLifecycle *BucketLifecycle
+
+	err = json.Unmarshal(bodyContent, &bucketLifecycle)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bucketLifecycle, nil
+}
+
+// DeleteBucketLifecycle deletes the lifecycle settings of a BOS Bucket.
+//
+// For details, please refer https://cloud.baidu.com/doc/BOS/API.html#DeleteLifeCycle
+func (c *Client) DeleteBucketLifecycle(bucketName string, option *bce.SignOption) error {
+	params := map[string]string{"lifecycle": ""}
+	req, err := bce.NewRequest("DELETE", c.GetURL(bucketName, "", params), nil)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = c.SendRequest(req, option)
+
+	return err
+}
+
 func (c *Client) setBucketAclFromString(bucketName, acl string, option *bce.SignOption) error {
 	params := map[string]string{"acl": ""}
 	req, err := bce.NewRequest("PUT", c.GetURL(bucketName, "", params), nil)
