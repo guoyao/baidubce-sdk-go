@@ -31,7 +31,7 @@ go test -v github.com/guoyao/baidubce-sdk-go/...
 import (
 	"github.com/guoyao/baidubce-sdk-go/bce"
 	"github.com/guoyao/baidubce-sdk-go/bos"
-    "github.com/guoyao/baidubce-sdk-go/util"
+	"github.com/guoyao/baidubce-sdk-go/util"
 )
 
 var credentials = bce.NewCredentials("AK", "SK")
@@ -44,7 +44,7 @@ var bosClient = bos.NewClient(bosConfig)
 
 ```go
 func CreateBucket() {
-    bucketName := "baidubce-sdk-go"
+	bucketName := "baidubce-sdk-go"
 	err := bosClient.CreateBucket(bucketName, nil)
 
 	if err != nil {
