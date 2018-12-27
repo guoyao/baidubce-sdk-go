@@ -231,7 +231,7 @@ func TestSetBucketAcl(t *testing.T) {
 			AccessControlList: []Grant{
 				Grant{
 					Grantee: []BucketGrantee{
-						BucketGrantee{Id: "ef5a4b19192f4931adcf0e12f82795e2"},
+						BucketGrantee{Id: "another-user-id"},
 					},
 					Permission: []string{"FULL_CONTROL"},
 				},
@@ -1635,7 +1635,6 @@ func TestPubObjectBySTS(t *testing.T) {
 	around(t, method, bucketNamePrefix, objectKey, func(bucketName string) {
 		req := bce.SessionTokenRequest{
 			DurationSeconds: 600,
-			Id:              "ef5a4b19192f4931adcf0e12f82795e2",
 			AccessControlList: []bce.AccessControlListItem{
 				bce.AccessControlListItem{
 					Service:    "bce:bos",

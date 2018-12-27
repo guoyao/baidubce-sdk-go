@@ -70,6 +70,7 @@ func PutObject() {
 
 	option := new(bce.SignOption)
 	metadata := new(bos.ObjectMetadata)
+	metadata.StorageClass = bos.STORAGE_CLASS_STANDARD_IA
 	metadata.AddUserMetadata("x-bce-meta-name", "guoyao")
 	putObjectResponse, err := bosClient.PutObject(bucketName, objectKey, str, metadata, option)
 
@@ -264,7 +265,6 @@ func MultipartUploadFromFile() {
 func GetSessionToken() {
 	req := bce.SessionTokenRequest{
 		DurationSeconds: 600,
-		Id:              "ef5a4b19192f4931adcf0e12f82795e2",
 		AccessControlList: []bce.AccessControlListItem{
 			bce.AccessControlListItem{
 				Service:    "bce:bos",
@@ -296,7 +296,6 @@ func putObjectBySTS() {
 
 	req := bce.SessionTokenRequest{
 		DurationSeconds: 600,
-		Id:              "ef5a4b19192f4931adcf0e12f82795e2",
 		AccessControlList: []bce.AccessControlListItem{
 			bce.AccessControlListItem{
 				Service:    "bce:bos",
