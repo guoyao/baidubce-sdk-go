@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	Version = "1.0.4"
+	Version = "1.0.5"
 
 	// ExpirationPeriodInSeconds 1800s is the default expiration period.
 	ExpirationPeriodInSeconds = 1800
